@@ -1,0 +1,2380 @@
+{% extends 'base.html' %} 
+{% block title %}AyuHealthAI - Admin Dashboard{%endblock %}
+ {% block extra_styles %}
+<style>
+  .dashboard-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dashboard-card {
+    background: transparent;
+    margin-bottom: 12px;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 12px 14px;
+    border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+    border-left: 3px solid #dc2626;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  }
+
+  .stat-card .icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .stat-card .number {
+    font-size: 22px;
+    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 2px;
+  }
+
+  .stat-card .label {
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-create {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    padding: 10px 24px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+
+  .btn-create:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #dc2626;
+    border: 2px solid #dc2626;
+  }
+
+  .btn-secondary:hover {
+    background: #dc2626;
+    color: white;
+  }
+
+  .two-col-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .section {
+    background: white;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 0;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section .section-header {
+    flex-shrink: 0;
+  }
+  .section .requests-grid,
+  .section .donors-table-container {
+    flex: 1;
+    min-height: 280px;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #dc2626;
+  }
+
+  .section-header h2 {
+    color: #1f2937;
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+
+  .filter-btn.active {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+  }
+
+  .requests-grid {
+    display: grid;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+
+  .requests-grid::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .requests-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  .requests-grid::-webkit-scrollbar-thumb {
+    background: #dc2626;
+    border-radius: 10px;
+  }
+
+  .requests-grid::-webkit-scrollbar-thumb:hover {
+    background: #b91c1c;
+  }
+
+  .request-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    transition: all 0.2s;
+  }
+
+  .request-card:hover {
+    border-color: #dc2626;
+    box-shadow: 0 2px 10px rgba(220, 38, 38, 0.08);
+  }
+
+  .request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .request-id {
+    font-size: 15px;
+    font-weight: bold;
+    color: #1f2937;
+  }
+
+  .urgency-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .urgency-critical {
+    background: #dc2626;
+    color: white;
+    animation: pulse-red 2s infinite;
+  }
+
+  .urgency-high {
+    background: #f59e0b;
+    color: white;
+  }
+
+  .urgency-medium {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .delay-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #fef3c7;
+    color: #b45309;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 6px;
+  }
+  .delay-icon-badge:hover {
+    background: #fde68a;
+  }
+  .delay-count {
+    font-size: 11px;
+  }
+
+  .admin-delay-modal .modal-content {
+    max-width: 520px;
+  }
+  .admin-delay-item {
+    padding: 14px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+  }
+  .admin-delay-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+  .admin-delay-reason {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 6px;
+  }
+  .admin-delay-donor {
+    font-size: 13px;
+    color: #374151;
+  }
+  .admin-delay-donor a {
+    color: #dc2626;
+    text-decoration: none;
+  }
+  .admin-delay-donor a:hover {
+    text-decoration: underline;
+  }
+  .btn-resolve-delay {
+    padding: 6px 14px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn-resolve-delay:hover {
+    background: #059669;
+  }
+  .admin-delay-resolved {
+    font-size: 12px;
+    color: #059669;
+    margin-top: 6px;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  .status-open {
+    background: #3b82f6;
+    color: white;
+  }
+  .status-fulfilled {
+    background: #10b981;
+    color: white;
+  }
+  .status-failed {
+    background: #ef4444;
+    color: white;
+  }
+  .status-cancelled {
+    background: #6b7280;
+    color: white;
+  }
+  .btn-view {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #dc2626;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-view:hover {
+    background: #b91c1c;
+    color: white;
+  }
+
+  .cards-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .data-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    transition: all 0.2s;
+  }
+  .data-card:hover {
+    border-color: #dc2626;
+    box-shadow: 0 2px 10px rgba(220, 38, 38, 0.08);
+  }
+  .data-card .card-title {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .data-card .card-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+  .data-card .card-action {
+    margin-top: 10px;
+  }
+  @media (max-width: 1200px) {
+    .cards-grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .cards-grid-4 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Outer section card: one column, fixed card size, scroll after 3 rows */
+  .outer-section-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .outer-section-card .section-header {
+    flex-shrink: 0;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .cards-list-single-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .cards-list-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    flex: 1;
+    min-height: 0;
+  }
+  .cards-list-single-col .data-card {
+    min-height: 88px;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse-red {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .request-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info-label {
+    font-size: 10px;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .blood-group {
+    color: #dc2626;
+    font-size: 16px;
+  }
+
+  .responses-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .responses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .response-count {
+    background: #dc2626;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .responses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .response-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .donor-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .donor-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 13px;
+  }
+
+  .donor-details .name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13px;
+  }
+
+  .donor-details .contact {
+    font-size: 11px;
+    color: #6b7280;
+  }
+
+  .response-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .response-accepted {
+    background: #10b981;
+    color: white;
+  }
+
+  .response-rejected {
+    background: #ef4444;
+    color: white;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+  }
+
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    max-width: 520px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #dc2626;
+  }
+
+  .modal-header h2 {
+    color: #1f2937;
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .close-btn {
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .close-btn:hover {
+    background: #f3f4f6;
+    color: #dc2626;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 4px;
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+  }
+
+  .form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 18px;
+  }
+
+  .btn-submit {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  }
+
+  .btn-cancel {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-cancel:hover {
+    background: #e5e7eb;
+  }
+
+  .location-block {
+    margin-top: 14px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  .location-block .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13px;
+  }
+  .location-block .checkbox-label input {
+    width: auto;
+  }
+  .location-fields {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .location-tip {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6b7280;
+    background: #fef3c7;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #f59e0b;
+  }
+  .request-location-card {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: #ecfdf5;
+    border-radius: 6px;
+    border-left: 3px solid #10b981;
+    font-size: 11px;
+    color: #065f46;
+  }
+  .request-location-card .loc-name {
+    font-weight: 600;
+  }
+  .request-location-card .loc-coords {
+    color: #047857;
+    font-family: monospace;
+  }
+  .request-location-card .loc-radius {
+    font-weight: 500;
+  }
+
+  .donors-table-container {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-top: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+  }
+
+  .donors-table-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .donors-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+  }
+
+  .donors-table-container::-webkit-scrollbar-thumb {
+    background: #dc2626;
+    border-radius: 6px;
+  }
+
+  .donors-table-container::-webkit-scrollbar-thumb:hover {
+    background: #b91c1c;
+  }
+
+  .donors-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .donors-table thead {
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .donors-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .donors-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .donors-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 32px 16px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+
+  .no-data-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .no-data h3 {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .charts-row-2 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .chart-card {
+    background: white;
+    padding: 14px;
+    border-radius: 10px;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .chart-card h3 {
+    font-size: 14px;
+    margin: 0 0 10px 0;
+    color: #1f2937;
+    font-weight: 600;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 220px;
+  }
+
+  .chart-axis-labels {
+    font-size: 11px;
+    color: #6b7280;
+    margin: 8px 0 0 0;
+    padding: 0;
+  }
+
+  @media (max-width: 900px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .two-col-row {
+      grid-template-columns: 1fr;
+    }
+    .charts-row,
+    .charts-row-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-card">
+    <div class="action-buttons">
+      <button class="btn-create" onclick="openModal()">
+        + Create Blood Request
+      </button>
+      <button
+        class="btn-create btn-secondary"
+        onclick="location.href = '#donors'"
+      >
+        View All Donors
+      </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="icon">📋</div>
+        <div class="number">{{ total_requests }}</div>
+        <div class="label">Total Requests</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">👥</div>
+        <div class="number">{{ total_donors }}</div>
+        <div class="label">Registered Donors</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">✅</div>
+        <div class="number">{{ total_accepted }}</div>
+        <div class="label">Accepted Responses</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">⏰</div>
+        <div class="number">{{ active_requests }}</div>
+        <div class="label">Active Requests</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">🏥</div>
+        <div class="number">{{ total_hospitals }}</div>
+        <div class="label">Hospitals</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">🩸</div>
+        <div class="number">{{ total_blood_banks }}</div>
+        <div class="label">Blood Banks</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon">📍</div>
+        <div class="number">{{ total_cities }}</div>
+        <div class="label">Cities</div>
+      </div>
+    </div>
+
+    <!-- Charts row 1: Bar + Pie -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Requests by Blood Group</h3>
+        <div class="chart-wrap">
+          <canvas id="chartBloodGroups"></canvas>
+        </div>
+        <p class="chart-axis-labels">
+          X-axis: Blood group &nbsp;|&nbsp; Y-axis: Number of requests
+        </p>
+      </div>
+      <div class="chart-card">
+        <h3>Requests by Urgency</h3>
+        <div class="chart-wrap">
+          <canvas id="chartUrgency"></canvas>
+        </div>
+        <p class="chart-axis-labels">
+          Segments: Urgency level &nbsp;|&nbsp; Size: Number of requests
+        </p>
+      </div>
+    </div>
+    <!-- Charts row 2: Line (curve), Scatter, 2D horizontal bar -->
+    <div class="charts-row-2">
+      <div class="chart-card">
+        <h3>Requests Over Time (14 days)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartLine"></canvas>
+        </div>
+        <p class="chart-axis-labels">
+          X-axis: Date &nbsp;|&nbsp; Y-axis: Number of requests
+        </p>
+      </div>
+      <div class="chart-card">
+        <h3>Responses vs Request (curve)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartExponential"></canvas>
+        </div>
+        <p class="chart-axis-labels">
+          X-axis: Request # &nbsp;|&nbsp; Y-axis: Response count
+        </p>
+      </div>
+      <div class="chart-card">
+        <h3>Donors by Blood Group (2D)</h3>
+        <div class="chart-wrap">
+          <canvas id="chartDonorsBlood"></canvas>
+        </div>
+        <p class="chart-axis-labels">
+          X-axis: Number of donors &nbsp;|&nbsp; Y-axis: Blood group
+        </p>
+      </div>
+    </div>
+
+    <!-- <div class="section" style="margin-bottom: 12px;">
+        <div class="section-header">
+            <h2>Blood Banks</h2>
+            <a href="{% url 'admin_blood_banks' %}" class="btn-create" style="text-decoration: none; padding: 8px 16px; font-size: 13px;">Blood Banks page →</a>
+        </div>
+        {% if recent_blood_banks %}
+        <div class="cards-grid-4">
+            {% for b in recent_blood_banks %}
+            <div class="data-card">
+                <div class="card-title">{{ b.name }}</div>
+                <div class="card-meta">ID: {{ b.blood_bank_id }}</div>
+                <div class="card-meta">City: {{ b.city|default:"—" }}</div>
+                <div class="card-meta">Reliability: {{ b.reliability_score|default:"—" }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-data"><p>No blood banks yet. <a href="{% url 'admin_blood_banks' %}">Go to Blood Banks page</a> to add one.</p></div>
+        {% endif %}
+    </div> -->
+
+    <!-- Hospitals & Cities: single section, Add Hospital + Add City in same page -->
+    <div class="outer-section-card" style="margin-bottom: 12px">
+      <div class="section-header">
+        <h2>Hospitals &amp; Cities</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn-create" style="padding: 8px 16px; font-size: 13px" onclick="document.getElementById('addHospitalModal').classList.add('show')">+ Add Hospital</button>
+          <button type="button" class="btn-create" style="padding: 8px 16px; font-size: 13px" onclick="document.getElementById('addCityModal').classList.add('show')">+ Add City</button>
+          <a href="{% url 'admin_hospitals' %}" class="btn-create btn-secondary" style="text-decoration: none; padding: 8px 16px; font-size: 13px">View All Hospitals →</a>
+          <a href="{% url 'admin_cities' %}" class="btn-create btn-secondary" style="text-decoration: none; padding: 8px 16px; font-size: 13px">View All Cities →</a>
+        </div>
+      </div>
+      <div class="two-col-row" style="margin-top: 12px; gap: 16px;">
+        <div style="flex: 1; min-width: 0;">
+          <h3 style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Hospitals</h3>
+          {% if recent_hospitals %}
+          <div class="cards-list-scroll">
+            <div class="cards-list-single-col">
+              {% for h in recent_hospitals %}
+              <div class="data-card">
+                <div class="card-title">{{ h.hospital_name }}</div>
+                <div class="card-meta">ID: {{ h.hospital_id }}</div>
+                <div class="card-meta">City: {{ h.city|default:"—" }}</div>
+                <div class="card-meta">Tier: {{ h.tier|default:"—" }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="no-data" style="padding: 16px;">
+            <p>No hospitals yet. Click <strong>+ Add Hospital</strong> above to add one.</p>
+          </div>
+          {% endif %}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <h3 style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Cities</h3>
+          {% if recent_cities %}
+          <div class="cards-list-scroll">
+            <div class="cards-list-single-col">
+              {% for c in recent_cities %}
+              <div class="data-card">
+                <div class="card-title">{{ c.city }}, {{ c.state }}</div>
+                <div class="card-meta">Region: {{ c.region|default:"—" }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="no-data" style="padding: 16px;">
+            <p>No cities yet. Click <strong>+ Add City</strong> above to add one.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Blood Requests & All Donors: one row, 2 cols -->
+    <div class="two-col-row">
+      <div class="section">
+        <div class="section-header">
+          <h2>Blood Requests</h2>
+          <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterRequests('all')">
+              All
+            </button>
+            <button class="filter-btn" onclick="filterRequests('critical')">
+              Critical
+            </button>
+            <button class="filter-btn" onclick="filterRequests('high')">
+              High
+            </button>
+            <button class="filter-btn" onclick="filterRequests('medium')">
+              Medium
+            </button>
+          </div>
+        </div>
+
+        <div class="requests-grid">
+          {% if blood_requests %} {% for request in blood_requests %}
+          <div
+            class="request-card"
+            data-urgency="{{ request.urgency }}"
+            onclick="openRequestDetailModal({{ request.id }})"
+            role="button"
+            tabindex="0"
+            style="cursor: pointer"
+            onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); openRequestDetailModal({{ request.id }}); }"
+          >
+            <div class="request-header">
+              <div class="request-id">Request #{{ request.id }}</div>
+              <span class="urgency-badge urgency-{{ request.urgency }}">
+                {{ request.get_urgency_display }}
+              </span>
+              <span
+                class="delay-icon-badge"
+                onclick="event.stopPropagation(); openAdminDelayModal({{ request.id }})"
+                title="Delay reasons"
+                role="button"
+                id="delay-badge-{{ request.id }}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span class="delay-count" id="delay-count-{{ request.id }}"
+                  >{{ request.delay_reasons.count }}</span
+                >
+              </span>
+            </div>
+
+            <div class="request-info">
+              <div class="info-item">
+                <span class="info-label">Blood Group</span>
+                <span class="info-value blood-group"
+                  >{{ request.blood_group }}</span
+                >
+              </div>
+              <div class="info-item">
+                <span class="info-label">Units Needed</span>
+                <span class="info-value">{{ request.units_needed }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Created</span>
+                <span class="info-value" style="font-size: 13px"
+                  >{{ request.created_at|date:"M d, Y" }}</span
+                >
+              </div>
+              <div class="info-item">
+                <span class="info-label">Notified</span>
+                <span class="info-value"
+                  >{{ request.notifications.count }}</span
+                >
+              </div>
+            </div>
+
+            {% if request.note %}
+            <div
+              style="
+                background: white;
+                padding: 10px;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                border-left: 3px solid #dc2626;
+              "
+            >
+              <strong
+                style="
+                  color: #6b7280;
+                  font-size: 10px;
+                  text-transform: uppercase;
+                "
+                >Note:</strong
+              >
+              <p style="margin: 4px 0 0 0; color: #1f2937; font-size: 13px">
+                {{ request.note }}
+              </p>
+            </div>
+            {% endif %} {% if request.location_name or request.req_lat %}
+            <div class="request-location-card">
+              <span class="info-label" style="margin-bottom: 6px"
+                >📍 Request location</span
+              >
+              {% if request.location_name %}
+              <div class="loc-name">{{ request.location_name }}</div>
+              {% endif %} {% if request.req_lat and request.req_lng %}
+              <div class="loc-coords">
+                Lat: {{ request.req_lat }} · Lng: {{ request.req_lng }}
+              </div>
+              <div class="loc-radius">Within {{ request.radius_km }} km</div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="responses-section">
+              <div class="responses-header">
+                <strong style="color: #1f2937; font-size: 12px"
+                  >Donor Responses</strong
+                >
+                <span class="response-count"
+                  >{{ request.responses.count }} Responses</span
+                >
+              </div>
+
+              {% if request.responses.all %}
+              <div class="responses-list">
+                {% for response in request.responses.all %}
+                <div class="response-item">
+                  <div class="donor-info">
+                    <div class="donor-avatar">
+                      {{ response.donor.username.0|upper }}
+                    </div>
+                    <div class="donor-details">
+                      <div class="name">{{ response.donor.username }}</div>
+                      <div class="contact">
+                        {% if response.donor.donor_profile %} 📞 {{
+                        response.donor.donor_profile.phone }} | 🩸 {{
+                        response.donor.donor_profile.blood_group }} {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  <span class="response-badge response-{{ response.response }}">
+                    {{ response.get_response_display }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div
+                style="
+                  text-align: center;
+                  padding: 12px;
+                  color: #6b7280;
+                  font-style: italic;
+                  font-size: 12px;
+                "
+              >
+                No responses yet
+              </div>
+              {% endif %}
+            </div>
+            {% if request.delay_reasons.all %}
+            <div id="delay-list-{{ request.id }}" style="display: none">
+              {% for delay in request.delay_reasons.all %}
+              <div
+                class="admin-delay-item"
+                data-delay-id="{{ delay.delay_id }}"
+              >
+                <div class="admin-delay-meta">
+                  <strong>Stage:</strong> {{ delay.get_stage_display }} ·
+                  <strong>Category:</strong> {{ delay.delay_category|default:"—"
+                  }} · {{ delay.delay_minutes|default:"—" }} min
+                </div>
+                <div class="admin-delay-reason">{{ delay.delay_reason }}</div>
+                <div class="admin-delay-donor">
+                  {% if delay.reported_by %}
+                  Donor: <strong>{{ delay.reported_by.username }}</strong>
+                  {% if delay.reported_by.donor_profile %} · 📞
+                  <a href="tel:{{ delay.reported_by.donor_profile.phone }}"
+                    >{{ delay.reported_by.donor_profile.phone }}</a>
+                  {% endif %}
+                  {% else %}
+                  N/A
+                  {% endif %}
+                </div>
+                {% if not delay.resolved %}
+                <form
+                  method="post"
+                  action="{% url 'admin_resolve_delay' delay.delay_id %}"
+                  style="margin-top: 8px"
+                >
+                  {% csrf_token %}
+                  <button type="submit" class="btn-resolve-delay">
+                    Resolve
+                  </button>
+                </form>
+                {% else %}
+                <div class="admin-delay-resolved">
+                  ✓ Resolved {{ delay.resolved_at|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="no-data">
+            <div class="no-data-icon">📋</div>
+            <h3>No Blood Requests Yet</h3>
+            <p>Click "Create Blood Request" to add your first request</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- All Donors Section -->
+      <div class="section" id="donors">
+        <div class="section-header">
+          <h2>All Registered Donors</h2>
+          <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterDonors('all')">
+              All
+            </button>
+            {% for bg in blood_groups %}
+            <button class="filter-btn" onclick="filterDonors('{{ bg.0 }}')">
+              {{ bg.0 }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if donors %}
+        <div class="donors-table-container">
+          <table class="donors-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Blood Group</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for donor in donors %}
+              <tr data-blood-group="{{ donor.blood_group }}">
+                <td>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <div
+                      class="donor-avatar"
+                      style="width: 35px; height: 35px; font-size: 14px"
+                    >
+                      {{ donor.user.username.0|upper }}
+                    </div>
+                    <strong>{{ donor.user.username }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <span class="blood-group">{{ donor.blood_group }}</span>
+                </td>
+                <td>{{ donor.phone }}</td>
+                <td>
+                  {% if donor.is_available %}
+                  <span class="response-badge response-accepted"
+                    >Available</span
+                  >
+                  {% else %}
+                  <span class="response-badge response-rejected"
+                    >Unavailable</span
+                  >
+                  {% endif %}
+                </td>
+                <td>{{ donor.created_at|date:"M d, Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+          <div class="no-data-icon">👥</div>
+          <h3>No Donors Registered Yet</h3>
+          <p>Create donor profiles through Django admin panel</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Request Modal -->
+<div id="createModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Create Blood Request</h2>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+
+    <form method="post" action="{% url 'admin_create_request' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="blood_group">Blood Group *</label>
+        <select id="blood_group" name="blood_group" required>
+          <option value="">Select Blood Group</option>
+          {% for bg in blood_groups %}
+          <option value="{{ bg.0 }}">{{ bg.1 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="units_needed">Units Needed *</label>
+        <input
+          type="number"
+          id="units_needed"
+          name="units_needed"
+          min="1"
+          value="1"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="urgency">Urgency Level *</label>
+        <select id="urgency" name="urgency" required>
+          <option value="">Select Urgency</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="note">Additional Notes</label>
+        <textarea
+          id="note"
+          name="note"
+          placeholder="Enter any additional information..."
+        ></textarea>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="modal_hospital_id">Hospital (optional)</label>
+          <select id="modal_hospital_id" name="hospital_id">
+            <option value="">— Select or leave blank —</option>
+            {% for h in hospitals %}
+            <option value="{{ h.hospital_id }}">{{ h.hospital_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal_source">Source</label>
+          <select id="modal_source" name="source">
+            <option value="app">App</option>
+            <option value="call">Call</option>
+            <option value="hospital">Hospital</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="modal_city">City (optional)</label>
+          <select id="modal_city_select" name="city_select">
+            <option value="">— Select or type below —</option>
+            {% for c in cities %}
+            <option value="{{ c.city }}" data-state="{{ c.state }}">
+              {{ c.city }}, {{ c.state }}
+            </option>
+            {% endfor %}
+          </select>
+          <input
+            type="text"
+            id="modal_city"
+            name="city"
+            placeholder="Or type city"
+            style="
+              margin-top: 6px;
+              padding: 8px 12px;
+              width: 100%;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
+            "
+          />
+        </div>
+        <div class="form-group">
+          <label for="modal_state">State (optional)</label>
+          <input
+            type="text"
+            id="modal_state"
+            name="state"
+            placeholder="e.g. Telangana"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="modal_sla_minutes">SLA (minutes, optional)</label>
+        <input
+          type="number"
+          id="modal_sla_minutes"
+          name="sla_minutes"
+          min="0"
+          placeholder="Target fulfillment time"
+        />
+      </div>
+
+      <!-- Request location (optional) for distance-based matching -->
+      <div class="form-group location-block">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            id="use_location"
+            name="use_location"
+            value="on"
+          />
+          <span
+            >Notify only donors within radius (location-based matching)</span
+          >
+        </label>
+        <div id="locationFields" class="location-fields" style="display: none">
+          <div class="form-group">
+            <label for="location_name"
+              >Location name (e.g. Kondapur Hospital)</label
+            >
+            <input
+              type="text"
+              id="location_name"
+              name="location_name"
+              placeholder="e.g. Kondapur Hospital"
+            />
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="req_lat">Latitude *</label>
+              <input
+                type="text"
+                id="req_lat"
+                name="req_lat"
+                placeholder="e.g. 17.4842"
+                step="any"
+              />
+            </div>
+            <div class="form-group">
+              <label for="req_lng">Longitude *</label>
+              <input
+                type="text"
+                id="req_lng"
+                name="req_lng"
+                placeholder="e.g. 78.3894"
+                step="any"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <button
+              type="button"
+              id="adminGetLocationBtn"
+              class="btn-get-location"
+              style="
+                padding: 8px 14px;
+                background: #3498db;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+              "
+            >
+              📍 Enable location & get coordinates
+            </button>
+            <p
+              id="adminLocationMessage"
+              style="
+                font-size: 13px;
+                margin-top: 8px;
+                display: none;
+                color: #047857;
+              "
+            ></p>
+          </div>
+          <div class="form-group">
+            <label for="radius_km">Radius (km)</label>
+            <input
+              type="number"
+              id="radius_km"
+              name="radius_km"
+              min="0.1"
+              max="500"
+              step="0.5"
+              value="5"
+              placeholder="5"
+            />
+          </div>
+          <p class="location-tip">
+            Donors must have updated their location in the app (Profile → Update
+            my location) to be matched by distance.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-submit">Create Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Request Created Summary Modal (after create – stay on dashboard) -->
+<div id="requestCreatedModal" class="modal">
+  <div class="modal-content" style="max-width: 560px">
+    <div class="modal-header">
+      <h2>Request created</h2>
+      <button class="close-btn" onclick="closeRequestCreatedModal()">
+        &times;
+      </button>
+    </div>
+    <div style="padding: 16px 0">
+      <p style="margin: 0 0 16px 0; color: #1f2937">
+        Blood request #{{ created_request_id|default:'' }} has been created.
+      </p>
+      <div style="display: flex; gap: 16px; margin-bottom: 16px">
+        <div
+          style="
+            flex: 1;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+          "
+        >
+          <div style="font-size: 28px; font-weight: bold">
+            {{ created_notified_count|default:0 }}
+          </div>
+          <div style="font-size: 13px; opacity: 0.95">Donors Notified</div>
+        </div>
+        <div
+          style="
+            flex: 1;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+          "
+        >
+          <div style="font-size: 28px; font-weight: bold">
+            {{ created_accepted_count|default:0 }}
+          </div>
+          <div style="font-size: 13px; opacity: 0.95">Donors Accepted</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: #6b7280; margin: 0 0 10px 0">
+        When the first donor accepts, the request is closed for others. If they
+        decline, the next donor can still accept.
+      </p>
+      <p style="font-size: 11px; color: #6b7280; margin: 0 0 8px 0">
+        Compatible blood groups are notified (O- can donate to O+, so O- donors
+        correctly appear for O+ requests).
+      </p>
+      {% if created_notified_list %}
+      <div style="margin-bottom: 8px">
+        <strong style="color: #1f2937; font-size: 13px">Donors to track</strong>
+      </div>
+      <div
+        style="
+          max-height: 240px;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          margin-bottom: 12px;
+        "
+      >
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <thead>
+            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb">
+              <th style="padding: 8px 10px; text-align: left">ID</th>
+              <th style="padding: 8px 10px; text-align: left">Name</th>
+              <th style="padding: 8px 10px; text-align: left">Blood group</th>
+              <th style="padding: 8px 10px; text-align: left">Phone</th>
+              <th style="padding: 8px 10px; text-align: left">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in created_notified_list %}
+            <tr style="border-bottom: 1px solid #e5e7eb">
+              <td style="padding: 8px 10px; font-size: 12px; color: #6b7280">
+                {{ d.donor_id }}
+              </td>
+              <td style="padding: 8px 10px; font-weight: 600">
+                {{ d.username }}
+              </td>
+              <td style="padding: 8px 10px">{{ d.blood_group|default:"—" }}</td>
+              <td style="padding: 8px 10px">{{ d.phone|default:"—" }}</td>
+              <td style="padding: 8px 10px">
+                {% if d.status_key == 'accepted' %}
+                <span
+                  style="
+                    background: #10b981;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                  "
+                  >Accepted</span
+                >
+                {% elif d.status_key == 'rejected' %}
+                <span
+                  style="
+                    background: #ef4444;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                  "
+                  >Declined</span
+                >
+                {% else %}
+                <span
+                  style="
+                    background: #6b7280;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                  "
+                  >Pending</span
+                >
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="font-size: 13px; color: #6b7280; margin: 0">
+        No donors were notified for this request. They can respond in the app or
+        Notifications page when matched.
+      </p>
+      {% endif %}
+    </div>
+    <div class="form-actions" style="justify-content: center; margin-top: 20px">
+      <button
+        type="button"
+        class="btn-submit"
+        onclick="closeRequestCreatedModal()"
+      >
+        OK
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Blood Request Detail Modal (content loaded via fetch) -->
+<div id="requestDetailModal" class="modal">
+  <div class="modal-content" style="max-width: 640px; width: 95%">
+    <div class="modal-header">
+      <h2>Request Details</h2>
+      <button class="close-btn" onclick="closeRequestDetailModal()">
+        &times;
+      </button>
+    </div>
+    <div id="requestDetailModalBody" style="min-height: 120px">
+      <p style="color: #6b7280; text-align: center">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<!-- Delay reasons modal (admin) -->
+<div id="adminDelayModal" class="modal admin-delay-modal">
+  <div class="modal-content" style="width: 95%">
+    <div class="modal-header">
+      <h2>
+        Delay reasons — Request #<span id="adminDelayModalRequestId"></span>
+      </h2>
+      <button class="close-btn" onclick="closeAdminDelayModal()">
+        &times;
+      </button>
+    </div>
+    <div
+      id="adminDelayModalBody"
+      style="max-height: 70vh; overflow-y: auto; padding: 16px"
+    ></div>
+  </div>
+</div>
+
+<!-- Add Hospital modal (same page) -->
+<div id="addHospitalModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add Hospital</h2>
+      <button class="close-btn" onclick="document.getElementById('addHospitalModal').classList.remove('show')">&times;</button>
+    </div>
+    <form method="post" action="{% url 'admin_add_hospital' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'admin_dashboard' %}">
+      <div class="form-group">
+        <label for="dashboard_hospital_id">Hospital ID *</label>
+        <input type="text" id="dashboard_hospital_id" name="hospital_id" required placeholder="e.g. HOS001">
+      </div>
+      <div class="form-group">
+        <label for="dashboard_hospital_name">Hospital Name *</label>
+        <input type="text" id="dashboard_hospital_name" name="hospital_name" required placeholder="e.g. City General Hospital">
+      </div>
+      <div class="form-group">
+        <label for="dashboard_hospital_city">City</label>
+        <input type="text" id="dashboard_hospital_city" name="city" placeholder="e.g. Hyderabad">
+      </div>
+      <div class="form-group">
+        <label for="dashboard_hospital_tier">Tier</label>
+        <input type="text" id="dashboard_hospital_tier" name="tier" placeholder="e.g. Tier 1">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('addHospitalModal').classList.remove('show')">Cancel</button>
+        <button type="submit" class="btn-submit">Save Hospital</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add City modal (same page) -->
+<div id="addCityModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add City</h2>
+      <button class="close-btn" onclick="document.getElementById('addCityModal').classList.remove('show')">&times;</button>
+    </div>
+    <form method="post" action="{% url 'admin_add_city' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'admin_dashboard' %}">
+      <div class="form-group">
+        <label for="dashboard_city">City *</label>
+        <input type="text" id="dashboard_city" name="city" required placeholder="e.g. Hyderabad">
+      </div>
+      <div class="form-group">
+        <label for="dashboard_state">State *</label>
+        <input type="text" id="dashboard_state" name="state" required placeholder="e.g. Telangana">
+      </div>
+      <div class="form-group">
+        <label for="dashboard_region">Region</label>
+        <input type="text" id="dashboard_region" name="region" placeholder="e.g. South">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('addCityModal').classList.remove('show')">Cancel</button>
+        <button type="submit" class="btn-submit">Save City</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %} 
+{{chart_urgency|json_script:"chart-urgency-data" }} 
+{{chart_blood_groups|json_script:"chart-blood-groups-data" }}
+ {{chart_requests_over_time|json_script:"chart-line-data" }} 
+ {{chart_scatter|json_script:"chart-scatter-data" }}
+  {{chart_donors_blood|json_script:"chart-donors-blood-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  var createdRequestId = "{{ created_request_id|default:'' }}";
+  function openModal() {
+    document.getElementById("createModal").classList.add("show");
+  }
+
+  function closeModal() {
+    document.getElementById("createModal").classList.remove("show");
+  }
+
+  function openRequestDetailModal(requestId) {
+    var modal = document.getElementById("requestDetailModal");
+    var body = document.getElementById("requestDetailModalBody");
+    body.innerHTML =
+      '<p style="color: #6b7280; text-align: center;">Loading…</p>';
+    modal.classList.add("show");
+    var url = "{% url 'admin_request_detail_modal' request_id=1 %}".replace(
+      "1",
+      String(requestId),
+    );
+    fetch(url, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+    })
+      .then(function (r) {
+        return r.text();
+      })
+      .then(function (html) {
+        body.innerHTML = html;
+      })
+      .catch(function () {
+        body.innerHTML =
+          '<p style="color: #dc2626;">Could not load details. <a href="/request/' +
+          requestId +
+          '/">Open full page</a></p>';
+      });
+  }
+  function closeRequestDetailModal() {
+    document.getElementById("requestDetailModal").classList.remove("show");
+  }
+  function escapeHtml(s) {
+    if (s == null || s === undefined) return "";
+    var div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+  function openAdminDelayModal(requestId) {
+    document.getElementById("adminDelayModalRequestId").textContent = requestId;
+    document.getElementById("adminDelayModalBody").innerHTML =
+      '<p style="text-align:center; color: #6b7280;">Loading…</p>';
+    document.getElementById("adminDelayModal").classList.add("show");
+    var csrf =
+      (document.querySelector('input[name="csrfmiddlewaretoken"]') &&
+        document.querySelector('input[name="csrfmiddlewaretoken"]').value) ||
+      (document.cookie.match(/csrftoken=([^;]+)/) &&
+        document.cookie.match(/csrftoken=([^;]+)/)[1]);
+    var url = '{% url "api_admin_request_delays" request_id=0 %}'.replace(
+      "0",
+      String(requestId),
+    );
+    fetch(url, {
+      credentials: "same-origin",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        var html = "";
+        if (data.delays && data.delays.length) {
+          data.delays.forEach(function (d) {
+            html +=
+              '<div class="admin-delay-item" data-delay-id="' +
+              escapeHtml(d.delay_id) +
+              '">';
+            html +=
+              '<div class="admin-delay-meta"><strong>Stage:</strong> ' +
+              escapeHtml(d.stage_display) +
+              " · <strong>Category:</strong> " +
+              escapeHtml(d.delay_category_display) +
+              " · " +
+              (d.delay_minutes != null ? d.delay_minutes : "—") +
+              " min</div>";
+            html +=
+              '<div class="admin-delay-reason">' +
+              escapeHtml(d.delay_reason) +
+              "</div>";
+            html +=
+              '<div class="admin-delay-donor">Donor: <strong>' +
+              escapeHtml(d.reported_by_username) +
+              "</strong>";
+            if (d.reported_by_phone)
+              html +=
+                ' · 📞 <a href="tel:' +
+                escapeHtml(d.reported_by_phone) +
+                '">' +
+                escapeHtml(d.reported_by_phone) +
+                "</a>";
+            html += "</div>";
+            if (!d.resolved) {
+              html +=
+                '<form method="post" action="' +
+                escapeHtml(d.resolve_url) +
+                '" style="margin-top:8px;">';
+              html +=
+                '<input type="hidden" name="csrfmiddlewaretoken" value="' +
+                escapeHtml(csrf || "") +
+                '">';
+              html +=
+                '<button type="submit" class="btn-resolve-delay">Resolve</button></form>';
+            } else {
+              html +=
+                '<div class="admin-delay-resolved">✓ Resolved ' +
+                (d.resolved_at
+                  ? new Date(d.resolved_at).toLocaleString()
+                  : "") +
+                "</div>";
+            }
+            html += "</div>";
+          });
+        } else {
+          html =
+            '<p class="admin-notif-empty">No delay reasons for this request.</p>';
+        }
+        document.getElementById("adminDelayModalBody").innerHTML = html;
+        var countEl = document.getElementById("delay-count-" + requestId);
+        if (countEl)
+          countEl.textContent = (data.delays && data.delays.length) || 0;
+      })
+      .catch(function () {
+        document.getElementById("adminDelayModalBody").innerHTML =
+          '<p style="color: #dc2626;">Could not load delays.</p>';
+      });
+  }
+  function closeAdminDelayModal() {
+    document.getElementById("adminDelayModal").classList.remove("show");
+  }
+  document
+    .getElementById("adminDelayModal")
+    .addEventListener("click", function (e) {
+      if (e.target === this) closeAdminDelayModal();
+    });
+  document
+    .getElementById("adminDelayModal")
+    .addEventListener("submit", function (e) {
+      var form = e.target;
+      if (
+        form &&
+        form.tagName === "FORM" &&
+        form.action &&
+        form.action.indexOf("resolve") !== -1
+      ) {
+        e.preventDefault();
+        var action = form.action;
+        var csrfInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
+        var csrf = csrfInput
+          ? csrfInput.value
+          : document.querySelector("[name=csrfmiddlewaretoken]") &&
+            document.querySelector("[name=csrfmiddlewaretoken]").value;
+        var item = form.closest(".admin-delay-item");
+        fetch(action, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken":
+              csrf ||
+              (document.cookie.match(/csrftoken=([^;]+)/) &&
+                document.cookie.match(/csrftoken=([^;]+)/)[1]),
+          },
+          body: "csrfmiddlewaretoken=" + encodeURIComponent(csrf || ""),
+          credentials: "same-origin",
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (data && data.status === "ok" && item) {
+              item.remove();
+              var body = document.getElementById("adminDelayModalBody");
+              var requestId = document.getElementById(
+                "adminDelayModalRequestId",
+              ).textContent;
+              var remaining = body
+                ? body.querySelectorAll(".admin-delay-item").length
+                : 0;
+              var countEl = document.getElementById("delay-count-" + requestId);
+              if (countEl) countEl.textContent = remaining;
+              if (remaining === 0) {
+                body.innerHTML =
+                  '<p class="admin-notif-empty">No delay reasons for this request.</p>';
+              }
+            }
+            if (window.updateAdminDelayBadge) window.updateAdminDelayBadge();
+          })
+          .catch(function () {
+            if (window.updateAdminDelayBadge) window.updateAdminDelayBadge();
+          });
+      }
+    });
+
+  function closeRequestCreatedModal() {
+    document.getElementById("requestCreatedModal").classList.remove("show");
+    if (window.history && window.history.replaceState) {
+      var url =
+        window.location.pathname +
+        window.location.search
+          .replace(/[?&]created_request_id=[^&]+/, "")
+          .replace(/^&/, "?")
+          .replace(/\?$/, "");
+      window.history.replaceState(
+        {},
+        document.title,
+        url || window.location.pathname,
+      );
+    }
+  }
+
+  // Toggle location fields when "use location" checkbox changes
+  document.addEventListener("DOMContentLoaded", function () {
+    const useLocation = document.getElementById("use_location");
+    const locationFields = document.getElementById("locationFields");
+    if (useLocation && locationFields) {
+      useLocation.addEventListener("change", function () {
+        locationFields.style.display = this.checked ? "block" : "none";
+      });
+    }
+    var citySelect = document.getElementById("modal_city_select");
+    var cityInput = document.getElementById("modal_city");
+    var stateInput = document.getElementById("modal_state");
+    if (citySelect && cityInput && stateInput) {
+      citySelect.addEventListener("change", function () {
+        var opt = this.options[this.selectedIndex];
+        if (opt.value) {
+          cityInput.value = opt.value;
+          stateInput.value = opt.dataset.state || "";
+        }
+      });
+    }
+    if (createdRequestId) {
+      var createdModal = document.getElementById("requestCreatedModal");
+      if (createdModal) createdModal.classList.add("show");
+    }
+
+    // Enable location & get coordinates (browser geolocation)
+    const getLocationBtn = document.getElementById("adminGetLocationBtn");
+    const reqLatInput = document.getElementById("req_lat");
+    const reqLngInput = document.getElementById("req_lng");
+    const adminLocationMsg = document.getElementById("adminLocationMessage");
+    if (getLocationBtn && reqLatInput && reqLngInput) {
+      getLocationBtn.addEventListener("click", function () {
+        if (useLocation && !useLocation.checked) {
+          useLocation.checked = true;
+          locationFields.style.display = "block";
+        }
+        if (adminLocationMsg) {
+          adminLocationMsg.style.display = "none";
+          adminLocationMsg.textContent = "";
+        }
+        getLocationBtn.disabled = true;
+        getLocationBtn.textContent = "Getting location...";
+        if (!navigator.geolocation) {
+          if (adminLocationMsg) {
+            adminLocationMsg.textContent =
+              "Browser does not support geolocation.";
+            adminLocationMsg.style.display = "block";
+            adminLocationMsg.style.color = "#c0392b";
+          }
+          getLocationBtn.disabled = false;
+          getLocationBtn.textContent = "📍 Enable location & get coordinates";
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            reqLatInput.value = pos.coords.latitude.toFixed(6);
+            reqLngInput.value = pos.coords.longitude.toFixed(6);
+            if (adminLocationMsg) {
+              adminLocationMsg.textContent =
+                "Coordinates set. You can edit or add a location name.";
+              adminLocationMsg.style.display = "block";
+              adminLocationMsg.style.color = "#047857";
+            }
+            getLocationBtn.disabled = false;
+            getLocationBtn.textContent = "📍 Enable location & get coordinates";
+          },
+          function (err) {
+            var msg = "Could not get location: ";
+            if (err.code === 1) msg += "permission denied.";
+            else if (err.code === 2) msg += "position unavailable.";
+            else if (err.code === 3) msg += "timeout.";
+            else msg += err.message;
+            if (adminLocationMsg) {
+              adminLocationMsg.textContent = msg;
+              adminLocationMsg.style.display = "block";
+              adminLocationMsg.style.color = "#c0392b";
+            }
+            getLocationBtn.disabled = false;
+            getLocationBtn.textContent = "📍 Enable location & get coordinates";
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+        );
+      });
+    }
+
+    // Charts
+    var urgencyEl = document.getElementById("chart-urgency-data");
+    var bloodGroupsEl = document.getElementById("chart-blood-groups-data");
+    if (urgencyEl && typeof Chart !== "undefined") {
+      var u = JSON.parse(urgencyEl.textContent);
+      new Chart(document.getElementById("chartUrgency"), {
+        type: "pie",
+        data: {
+          labels: u.labels,
+          datasets: [
+            {
+              data: u.data,
+              backgroundColor: ["#dc2626", "#f59e0b", "#3b82f6"],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom" } },
+        },
+      });
+    }
+    if (bloodGroupsEl && typeof Chart !== "undefined") {
+      var bg = JSON.parse(bloodGroupsEl.textContent);
+      new Chart(document.getElementById("chartBloodGroups"), {
+        type: "bar",
+        data: {
+          labels: bg.labels,
+          datasets: [
+            {
+              label: "Requests",
+              data: bg.data,
+              backgroundColor: "rgba(220, 38, 38, 0.7)",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: "Blood group" } },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Number of requests" },
+            },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+    var lineEl = document.getElementById("chart-line-data");
+    if (lineEl && typeof Chart !== "undefined") {
+      var lineData = JSON.parse(lineEl.textContent);
+      new Chart(document.getElementById("chartLine"), {
+        type: "line",
+        data: {
+          labels: lineData.labels,
+          datasets: [
+            {
+              label: "Requests",
+              data: lineData.data,
+              borderColor: "#dc2626",
+              backgroundColor: "rgba(220, 38, 38, 0.1)",
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { title: { display: true, text: "Date" } },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Number of requests" },
+            },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+    var scatterEl = document.getElementById("chart-scatter-data");
+    if (scatterEl && typeof Chart !== "undefined") {
+      var sc = JSON.parse(scatterEl.textContent);
+      var xArr = sc.x || [];
+      var yArr = sc.y_responses || [];
+      var smoothY = [];
+      for (var i = 0; i < yArr.length; i++) {
+        var prev = i > 0 ? yArr[i - 1] : yArr[i];
+        var next = i < yArr.length - 1 ? yArr[i + 1] : yArr[i];
+        smoothY.push(
+          (prev + yArr[i] + next) / (i === 0 || i === yArr.length - 1 ? 2 : 3),
+        );
+      }
+      var curveData = smoothY.length ? smoothY : yArr;
+      new Chart(document.getElementById("chartExponential"), {
+        type: "line",
+        data: {
+          labels: xArr.map(String),
+          datasets: [
+            {
+              label: "Response count",
+              data: curveData,
+              borderColor: "#dc2626",
+              backgroundColor: "rgba(220, 38, 38, 0.12)",
+              fill: true,
+              tension: 0.5,
+              borderWidth: 2,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false },
+          scales: {
+            x: { title: { display: true, text: "Request #" } },
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Response count" },
+            },
+          },
+          plugins: { legend: { display: false } },
+          elements: { line: { tension: 0.5 } },
+        },
+      });
+    }
+    var donorsBloodEl = document.getElementById("chart-donors-blood-data");
+    if (donorsBloodEl && typeof Chart !== "undefined") {
+      var db = JSON.parse(donorsBloodEl.textContent);
+      new Chart(document.getElementById("chartDonorsBlood"), {
+        type: "bar",
+        data: {
+          labels: db.labels,
+          datasets: [
+            {
+              label: "Donors",
+              data: db.data,
+              backgroundColor: "rgba(59, 130, 246, 0.7)",
+            },
+          ],
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              beginAtZero: true,
+              title: { display: true, text: "Number of donors" },
+            },
+            y: { title: { display: true, text: "Blood group" } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+  });
+
+  // Close modal when clicking outside
+  window.onclick = function (event) {
+    const createModal = document.getElementById("createModal");
+    const requestDetailModal = document.getElementById("requestDetailModal");
+    const requestCreatedModal = document.getElementById("requestCreatedModal");
+    const addHospitalModal = document.getElementById("addHospitalModal");
+    const addCityModal = document.getElementById("addCityModal");
+    if (event.target === createModal) closeModal();
+    if (event.target === requestDetailModal) closeRequestDetailModal();
+    if (event.target === requestCreatedModal) closeRequestCreatedModal();
+    if (event.target === addHospitalModal) addHospitalModal.classList.remove("show");
+    if (event.target === addCityModal) addCityModal.classList.remove("show");
+  };
+
+  // Filter requests by urgency
+  function filterRequests(urgency) {
+    const cards = document.querySelectorAll(".request-card");
+    const section = document.querySelector(".two-col-row .section:first-child");
+    const buttons = section ? section.querySelectorAll(".filter-btn") : [];
+    if (event && event.target) {
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+    cards.forEach((card) => {
+      if (urgency === "all" || card.dataset.urgency === urgency) {
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
+      }
+    });
+  }
+
+  // Filter donors by blood group
+  function filterDonors(bloodGroup) {
+    const rows = document.querySelectorAll(".donors-table tbody tr");
+    const donorsSection = document.getElementById("donors");
+    const buttons = donorsSection
+      ? donorsSection.querySelectorAll(".filter-btn")
+      : [];
+    if (event && event.target) {
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    rows.forEach((row) => {
+      if (bloodGroup === "all" || row.dataset.bloodGroup === bloodGroup) {
+        row.style.display = "table-row";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  }
+</script>
+{% endblock %}

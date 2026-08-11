@@ -1,0 +1,62 @@
+name: ayh_mobile
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  dio: ^5.4.0
+  provider: ^6.0.5
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
+  go_router: ^13.0.0
+  json_annotation: ^4.8.1
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  fl_chart: ^0.69.0
+  geolocator: ^13.0.2
+  web_socket_channel: ^3.0.1
+  url_launcher: ^6.2.5
+  google_sign_in: ^6.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+
+  # App Icon
+  flutter_launcher_icons: ^0.14.3
+
+  # Splash Screen
+  flutter_native_splash: ^2.4.3
+
+# ------------------ APP ICON ------------------
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/blood450_logo.png
+  adaptive_icon_background: "#1a0a0a"
+  adaptive_icon_foreground: assets/images/blood450_logo.png
+
+# ---------------- SPLASH SCREEN ----------------
+flutter_native_splash:
+  color: "#1a0a0a"
+  image: assets/images/blood450_logo.png
+
+  android_12:
+    color: "#1a0a0a"
+    image: assets/images/blood450_logo.png
+
+# ---------------- FLUTTER ----------------
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

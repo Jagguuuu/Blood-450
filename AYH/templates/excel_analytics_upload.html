@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Excel Analytics – Upload{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .analytics-upload-card {
+        max-width: 560px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        padding: 28px;
+        border-left: 4px solid #dc2626;
+    }
+    .analytics-upload-card h2 {
+        margin: 0 0 8px 0;
+        font-size: 22px;
+        color: #1f2937;
+    }
+    .analytics-upload-card p {
+        margin: 0 0 20px 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+    .analytics-upload-card form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .analytics-upload-card input[type="file"] {
+        padding: 12px;
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        background: #f9fafb;
+        font-size: 14px;
+    }
+    .analytics-upload-card input[type="file"]:hover {
+        border-color: #dc2626;
+        background: #fef2f2;
+    }
+    .analytics-upload-card button[type="submit"] {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        align-self: flex-start;
+    }
+    .analytics-upload-card button[type="submit"]:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+    }
+    .analytics-upload-card .hint {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+    .analytics-link {
+        margin-top: 16px;
+    }
+    .analytics-link a {
+        color: #dc2626;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .analytics-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-text">
+        <h2>Excel Analytics</h2>
+        <p>Upload an Excel file to view interactive charts and insights (Power BI–style)</p>
+    </div>
+</div>
+
+<div class="analytics-upload-card">
+    <h2>Upload Excel file</h2>
+    <p>Supported: .xlsx and .xls. The first sheet will be used. Numeric and categorical columns are auto-detected for charts.</p>
+    <form method="post" action="{% url 'excel_analytics_upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            <label for="id_excel_file">Choose file</label>
+            <input type="file" name="excel_file" id="id_excel_file" accept=".xlsx,.xls" required>
+        </div>
+        <p class="hint">Max recommended: 50,000 rows x 50 columns. Large files may take a few seconds to process.</p>
+        <button type="submit">Upload and view dashboard</button>
+    </form>
+    <div class="analytics-link">
+        <a href="{% url 'excel_analytics_dashboard' %}">View last uploaded dashboard</a>
+        &nbsp;|&nbsp;
+        <a href="{% url 'excel_analytics_live' %}">View live data from database</a>
+    </div>
+</div>
+{% endblock %}

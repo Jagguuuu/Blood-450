@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "builds": [{ "src": "AYH/wsgi.py", "use": "@vercel/python" }],
+  "routes": [{ "src": "/(.*)", "dest": "AYH/wsgi.py" }],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "AYH.settings",
+    "SQLITE_DB_PATH": "/tmp/db.sqlite3"
+  },
+  "buildCommand": "python manage.py collectstatic --noinput"
+}

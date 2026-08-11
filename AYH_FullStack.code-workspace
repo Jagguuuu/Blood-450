@@ -1,0 +1,180 @@
+{
+  "folders": [
+    {
+      "name": "🐍 Django Backend (API)",
+      "path": "AYH"
+    },
+    {
+      "name": "📱 Flutter Mobile App",
+      "path": "ayh_mobile"
+    }
+  ],
+  "settings": {
+    // Python settings
+    "python.defaultInterpreterPath": "${workspaceFolder:🐍 Django Backend (API)}/venv/Scripts/python.exe",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.formatting.provider": "black",
+    
+    // Dart/Flutter settings
+    "dart.flutterSdkPath": null,
+    "[dart]": {
+      "editor.formatOnSave": true,
+      "editor.formatOnType": true,
+      "editor.rulers": [80],
+      "editor.selectionHighlight": false,
+      "editor.suggest.snippetsPreventQuickSuggestions": false,
+      "editor.suggestSelection": "first",
+      "editor.tabCompletion": "onlySnippets",
+      "editor.wordBasedSuggestions": "off"
+    },
+    
+    // Terminal settings
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    
+    // File associations
+    "files.associations": {
+      "*.html": "html",
+      "*.dart": "dart"
+    },
+    
+    // Exclude from search
+    "search.exclude": {
+      "**/__pycache__": true,
+      "**/node_modules": true,
+      "**/venv": true,
+      "**/.dart_tool": true,
+      "**/build": true
+    },
+    
+    // File watcher excludes
+    "files.watcherExclude": {
+      "**/__pycache__/**": true,
+      "**/venv/**": true,
+      "**/.dart_tool/**": true,
+      "**/build/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "dart-code.dart-code",
+      "dart-code.flutter",
+      "batisteo.vscode-django",
+      "formulahendry.auto-rename-tag",
+      "esbenp.prettier-vscode"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🐍 Django: Run Server",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder:🐍 Django Backend (API)}/manage.py",
+        "args": ["runserver"],
+        "django": true,
+        "justMyCode": false
+      },
+      {
+        "name": "📱 Flutter: Run Debug",
+        "type": "dart",
+        "request": "launch",
+        "program": "${workspaceFolder:📱 Flutter Mobile App}/lib/main.dart",
+        "cwd": "${workspaceFolder:📱 Flutter Mobile App}"
+      },
+      {
+        "name": "📱 Flutter: Run Release",
+        "type": "dart",
+        "request": "launch",
+        "program": "${workspaceFolder:📱 Flutter Mobile App}/lib/main.dart",
+        "cwd": "${workspaceFolder:📱 Flutter Mobile App}",
+        "flutterMode": "release"
+      }
+    ],
+    "compounds": [
+      {
+        "name": "🚀 Full Stack: Django + Flutter",
+        "configurations": ["🐍 Django: Run Server", "📱 Flutter: Run Debug"],
+        "stopAll": true
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Django: Start Server",
+        "type": "shell",
+        "command": "python",
+        "args": ["manage.py", "runserver"],
+        "options": {
+          "cwd": "${workspaceFolder:🐍 Django Backend (API)}"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "Django: Make Migrations",
+        "type": "shell",
+        "command": "python",
+        "args": ["manage.py", "makemigrations"],
+        "options": {
+          "cwd": "${workspaceFolder:🐍 Django Backend (API)}"
+        },
+        "group": "build"
+      },
+      {
+        "label": "Django: Migrate",
+        "type": "shell",
+        "command": "python",
+        "args": ["manage.py", "migrate"],
+        "options": {
+          "cwd": "${workspaceFolder:🐍 Django Backend (API)}"
+        },
+        "group": "build"
+      },
+      {
+        "label": "Flutter: Get Packages",
+        "type": "shell",
+        "command": "flutter",
+        "args": ["pub", "get"],
+        "options": {
+          "cwd": "${workspaceFolder:📱 Flutter Mobile App}"
+        },
+        "group": "build"
+      },
+      {
+        "label": "Flutter: Run",
+        "type": "shell",
+        "command": "flutter",
+        "args": ["run"],
+        "options": {
+          "cwd": "${workspaceFolder:📱 Flutter Mobile App}"
+        },
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        }
+      },
+      {
+        "label": "Flutter: Build APK",
+        "type": "shell",
+        "command": "flutter",
+        "args": ["build", "apk", "--release"],
+        "options": {
+          "cwd": "${workspaceFolder:📱 Flutter Mobile App}"
+        },
+        "group": "build"
+      }
+    ]
+  }
+}

@@ -1,0 +1,923 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Blood Donation System-450{% endblock %}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        background: #f1f5f9;
+      }
+
+      .container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0;
+        background: white;
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #971421;
+        color: rgb(251, 249, 249);
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .page-header {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .page-header-icon {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+
+      .page-header-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+      }
+
+      .page-header-text h2 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      .page-header-text p {
+        font-size: 12px;
+        margin: 0;
+        opacity: 0.95;
+      }
+
+      .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+      }
+
+      .navbar-logo {
+        height: 36px;
+        width: auto;
+        display: block;
+      }
+
+      .navbar h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .navbar-brand-inner {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .navbar-brand-inner .page-header-icon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .navbar-brand-inner .page-header-text h2 {
+        font-size: 18px;
+      }
+
+      .navbar-brand-inner .page-header-text p {
+        font-size: 11px;
+      }
+
+      .navbar-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .navbar-links a {
+        color: white;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      .navbar-links a:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .navbar-links button {
+        color: white;
+        background: transparent;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s;
+        font-family: inherit;
+      }
+
+      .navbar-links button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .user-info {
+        color: #ecf0f1;
+        font-size: 14px;
+      }
+
+      .profile-icon-wrap {
+        position: relative;
+        display: inline-block;
+      }
+
+      .profile-icon-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition:
+          background 0.2s,
+          border-color 0.2s,
+          color 0.2s;
+      }
+
+      .profile-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+      }
+
+      .profile-icon-btn svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .admin-notif-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+      .admin-notif-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      }
+      .admin-notif-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .admin-notif-btn svg {
+        width: 22px;
+        height: 22px;
+      }
+      .admin-notif-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        background: #ef4444;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .admin-notif-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .admin-notif-modal-overlay.show {
+        display: flex;
+      }
+      .admin-notif-modal {
+        background: white;
+        border-radius: 12px;
+        max-width: 520px;
+        width: 95%;
+        max-height: 85vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      }
+      .admin-notif-modal h3 {
+        margin: 0;
+        padding: 16px 20px;
+        background: #971421;
+        color: white;
+        font-size: 18px;
+      }
+      .admin-notif-modal-list {
+        padding: 12px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .admin-notif-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+      }
+      .admin-notif-row:last-child {
+        border-bottom: none;
+      }
+      .admin-notif-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      .admin-notif-row label {
+        flex: 1;
+        cursor: pointer;
+        margin: 0;
+        font-size: 14px;
+      }
+      .admin-notif-modal-actions {
+        display: flex;
+        gap: 10px;
+        padding: 12px 20px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+      }
+      .admin-notif-modal-actions button,
+      .admin-notif-modal-actions .btn-close {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+      }
+      .admin-notif-modal-actions .btn-delete {
+        background: #dc2626;
+        color: white;
+      }
+      .admin-notif-modal-actions .btn-delete:hover {
+        background: #b91c1c;
+      }
+      .admin-notif-modal-actions .btn-close {
+        background: #e5e7eb;
+        color: #374151;
+        text-decoration: none;
+      }
+      .admin-notif-modal-actions .btn-close:hover {
+        background: #d1d5db;
+      }
+      .admin-notif-select-all {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .admin-notif-select-all input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      .admin-notif-empty {
+        padding: 24px;
+        text-align: center;
+        color: #6b7280;
+      }
+
+      .profile-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        min-width: 280px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        border: 1px solid #e5e7eb;
+        z-index: 200;
+        overflow: hidden;
+      }
+
+      .profile-dropdown.show {
+        display: block;
+      }
+
+      .profile-dropdown-header {
+        background: linear-gradient(135deg, #971421, #b91c1c);
+        color: white;
+        padding: 16px;
+        text-align: center;
+      }
+
+      .profile-dropdown-header .profile-name {
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 2px;
+      }
+
+      .profile-dropdown-header .profile-role {
+        font-size: 12px;
+        opacity: 0.9;
+      }
+
+      .profile-dropdown-body {
+        padding: 12px;
+      }
+
+      .profile-detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+      }
+
+      .profile-detail-row:last-child {
+        border-bottom: none;
+      }
+
+      .profile-detail-row .label {
+        color: #6b7280;
+      }
+
+      .profile-detail-row .value {
+        color: #1f2937;
+        font-weight: 500;
+      }
+
+      .content {
+        padding: 16px;
+        max-width: 100%;
+      }
+
+      .messages {
+        margin-bottom: 20px;
+      }
+
+      .message {
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+      }
+
+      .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.3s;
+      }
+
+      .btn:hover {
+        background: #5568d3;
+      }
+
+      .btn-danger {
+        background: #e74c3c;
+      }
+
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+
+      .btn-success {
+        background: #27ae60;
+      }
+
+      .btn-success:hover {
+        background: #229954;
+      }
+
+      .btn:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+      }
+    </style>
+    {% block extra_styles %}{% endblock %}
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navbar">
+        <div class="navbar-brand-inner">
+          <img
+            src="{% static 'images/blood450_logo.png' %}"
+            alt=""
+            class="page-header-icon"
+            aria-hidden="true"
+          />
+          <div class="page-header-text">
+            <h2>AyuHealthAI</h2>
+            <p>Blood Bank Management System</p>
+          </div>
+        </div>
+        <div class="navbar-links">
+          {% if user.is_authenticated %} {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+          <a href="{% url 'admin_all_requests' %}">All Requests</a>
+          <a href="{% url 'admin_hospitals' %}">Hospitals</a>
+          <a href="{% url 'admin_blood_banks' %}">Blood Banks</a>
+          <a href="{% url 'admin_cities' %}">Cities</a>
+          <a href="{% url 'excel_analytics_live' %}">Analytics</a>
+          <div class="admin-notif-wrap">
+            <button
+              type="button"
+              class="admin-notif-btn"
+              id="adminNotifBell"
+              aria-label="Notifications"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+            </button>
+            <span
+              class="admin-notif-badge"
+              id="adminNotifBadge"
+              style="display: none"
+              >0</span
+            >
+          </div>
+
+          {% else %}
+          <div class="admin-notif-wrap">
+            <a
+              href="{% url 'donor_notifications' %}"
+              class="admin-notif-btn"
+              aria-label="Notifications"
+              style="text-decoration: none"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+            </a>
+            <span
+              class="admin-notif-badge"
+              id="donorNotifBadge"
+              style="display: none"
+              >0</span
+            >
+          </div>
+          <a href="{% url 'donor_notifications' %}">Notifications</a>
+          {% endif %}
+          <span class="user-info">Welcome, {{ user.username }}</span>
+          <div class="profile-icon-wrap">
+            <button
+              type="button"
+              class="profile-icon-btn"
+              id="profileIconBtn"
+              aria-label="User profile"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown">
+              <div class="profile-dropdown-header">
+                <div class="profile-name">
+                  {{ user.get_full_name|default:user.username }}
+                </div>
+                <div class="profile-role">
+                  {% if user.is_staff %}Staff / Admin{% else %}Donor{% endif %}
+                </div>
+              </div>
+              <div class="profile-dropdown-body">
+                <div class="profile-detail-row">
+                  <span class="label">Username</span>
+                  <span class="value">{{ user.username }}</span>
+                </div>
+                {% if user.email %}
+                <div class="profile-detail-row">
+                  <span class="label">Email</span>
+                  <span class="value">{{ user.email }}</span>
+                </div>
+                {% endif %} {% if user.first_name or user.last_name %}
+                <div class="profile-detail-row">
+                  <span class="label">Name</span>
+                  <span class="value"
+                    >{{ user.first_name }} {{ user.last_name }}</span
+                  >
+                </div>
+                {% endif %}
+                <div class="profile-detail-row">
+                  <span class="label">Role</span>
+                  <span class="value"
+                    >{% if user.is_staff %}Staff{% else %}Donor{% endif %}</span
+                  >
+                </div>
+                <div class="profile-detail-row">
+                  <span class="label">Member since</span>
+                  <span class="value"
+                    >{{ user.date_joined|date:"M d, Y" }}</span
+                  >
+                </div>
+                {% if user.last_login %}
+                <div class="profile-detail-row">
+                  <span class="label">Last login</span>
+                  <span class="value"
+                    >{{ user.last_login|date:"M d, Y H:i" }}</span
+                  >
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <form
+            method="post"
+            action="{% url 'logout' %}"
+            style="display: inline; margin: 0"
+          >
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+          </form>
+          {% endif %}
+        </div>
+      </nav>
+
+      {% if user.is_authenticated and user.is_staff %}
+      <div
+        class="admin-notif-modal-overlay"
+        id="adminNotifModal"
+        aria-hidden="true"
+      >
+        <div
+          class="admin-notif-modal"
+          role="dialog"
+          aria-labelledby="adminNotifModalTitle"
+        >
+          <h3 id="adminNotifModalTitle">Notifications</h3>
+          <form
+            method="post"
+            action="{% url 'admin_delete_notifications' %}"
+            id="adminNotifForm"
+          >
+            {% csrf_token %}
+            <div
+              class="admin-notif-select-all"
+              id="adminNotifSelectAllRow"
+              style="display: none"
+            >
+              <input
+                type="checkbox"
+                id="adminNotifSelectAll"
+                aria-label="Select all"
+              />
+              <label for="adminNotifSelectAll">Select all</label>
+            </div>
+            <div class="admin-notif-modal-list" id="adminNotifList"></div>
+            <div class="admin-notif-modal-list">
+              <p class="admin-notif-empty" id="adminNotifEmpty">Loading...</p>
+            </div>
+            <div class="admin-notif-modal-actions">
+              <button
+                type="submit"
+                name="delete"
+                class="btn-delete"
+                id="adminNotifDeleteBtn"
+                disabled
+              >
+                Delete
+              </button>
+              <button type="button" class="btn-close" id="adminNotifClose">
+                Close
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="content">
+        {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %} {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    {% include 'includes/whatsapp_chat_widget.html' %}
+    {% endif %}
+
+    <script>
+      (function () {
+        var btn = document.getElementById("profileIconBtn");
+        var dropdown = document.getElementById("profileDropdown");
+        if (btn && dropdown) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle("show");
+          });
+          document.addEventListener("click", function () {
+            dropdown.classList.remove("show");
+          });
+          dropdown.addEventListener("click", function (e) {
+            e.stopPropagation();
+          });
+        }
+        var bell = document.getElementById("adminNotifBell");
+        var modal = document.getElementById("adminNotifModal");
+        var closeBtn = document.getElementById("adminNotifClose");
+        var adminList = document.getElementById("adminNotifList");
+        var adminEmpty = document.getElementById("adminNotifEmpty");
+        var adminSelectRow = document.getElementById("adminNotifSelectAllRow");
+        var adminDeleteBtn = document.getElementById("adminNotifDeleteBtn");
+
+        function updateAdminBadge(count) {
+          var badge = document.getElementById("adminNotifBadge");
+          if (!badge) return;
+          badge.textContent = count;
+          badge.style.display = count > 0 ? "flex" : "none";
+        }
+
+        function wireAdminNotifCheckboxes() {
+          var selectAll = document.getElementById("adminNotifSelectAll");
+          var checkboxes = document.querySelectorAll(".admin-notif-cb");
+          if (!selectAll || !checkboxes.length) return;
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+          selectAll.onchange = function () {
+            checkboxes.forEach(function (cb) {
+              cb.checked = selectAll.checked;
+            });
+          };
+          checkboxes.forEach(function (cb) {
+            cb.onchange = function () {
+              var all = Array.prototype.every.call(checkboxes, function (c) {
+                return c.checked;
+              });
+              var any = Array.prototype.some.call(checkboxes, function (c) {
+                return c.checked;
+              });
+              selectAll.checked = all;
+              selectAll.indeterminate = any && !all;
+            };
+          });
+        }
+
+        function renderAdminNotifications(data) {
+          if (!adminList || !adminEmpty) return;
+          adminList.innerHTML = "";
+          var items = data && data.notifications ? data.notifications : [];
+          if (!items.length) {
+            if (adminSelectRow) adminSelectRow.style.display = "none";
+            if (adminDeleteBtn) adminDeleteBtn.disabled = true;
+            adminEmpty.textContent = "No notifications.";
+            adminEmpty.style.display = "block";
+            return;
+          }
+          adminEmpty.style.display = "none";
+          if (adminSelectRow) adminSelectRow.style.display = "flex";
+          if (adminDeleteBtn) adminDeleteBtn.disabled = false;
+          items.forEach(function (n) {
+            var row = document.createElement("div");
+            row.className = "admin-notif-row";
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.name = "notification_ids";
+            cb.value = n.id;
+            cb.id = "notif-" + n.id;
+            cb.className = "admin-notif-cb";
+            var label = document.createElement("label");
+            label.setAttribute("for", cb.id);
+            var msg = "";
+            if (n.notification_type === "request_created") {
+              msg =
+                "Request created: #" +
+                n.blood_request_id +
+                " (" +
+                n.blood_group +
+                ", " +
+                n.urgency +
+                ") — " +
+                n.created_at;
+            } else {
+              msg =
+                "Donor accepted: " +
+                n.donor_username +
+                " accepted request #" +
+                n.blood_request_id +
+                " (" +
+                n.blood_group +
+                ") — " +
+                n.created_at;
+            }
+            label.textContent = msg;
+            row.appendChild(cb);
+            row.appendChild(label);
+            adminList.appendChild(row);
+          });
+          wireAdminNotifCheckboxes();
+        }
+
+        function loadAdminNotifications() {
+          if (!adminList || !adminEmpty) return;
+          adminList.innerHTML = "";
+          adminEmpty.textContent = "Loading...";
+          adminEmpty.style.display = "block";
+          if (adminSelectRow) adminSelectRow.style.display = "none";
+          if (adminDeleteBtn) adminDeleteBtn.disabled = true;
+          fetch('{% url "api_admin_notifications" %}', {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              updateAdminBadge(d.count || 0);
+              renderAdminNotifications(d);
+            })
+            .catch(function () {
+              adminEmpty.textContent = "Failed to load notifications.";
+              adminEmpty.style.display = "block";
+            });
+        }
+
+        if (bell && modal) {
+          bell.addEventListener("click", function () {
+            modal.classList.add("show");
+            modal.setAttribute("aria-hidden", "false");
+            loadAdminNotifications();
+          });
+        }
+        if (closeBtn && modal) {
+          closeBtn.addEventListener("click", function () {
+            modal.classList.remove("show");
+            modal.setAttribute("aria-hidden", "true");
+          });
+        }
+        if (modal) {
+          modal.addEventListener("click", function (e) {
+            if (e.target === modal) {
+              modal.classList.remove("show");
+              modal.setAttribute("aria-hidden", "true");
+            }
+          });
+        }
+
+        if (document.getElementById("adminNotifBadge")) {
+          fetch('{% url "api_admin_notifications" %}?list=0', {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              updateAdminBadge(d.count || 0);
+            })
+            .catch(function () {});
+        }
+        function updateAdminDelayBadge() {
+          fetch('{% url "api_admin_unresolved_delay_count" %}', {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var b = document.getElementById("adminDelayBadge");
+              if (b) {
+                b.textContent = d.count;
+                b.style.display = d.count > 0 ? "flex" : "none";
+              }
+            })
+            .catch(function () {});
+        }
+        window.updateAdminDelayBadge = updateAdminDelayBadge;
+        if (document.getElementById("adminDelayBadge")) {
+          updateAdminDelayBadge();
+          setInterval(updateAdminDelayBadge, 5000);
+        }
+
+        function updateDonorNotifBadge() {
+          fetch('{% url "api_donor_notification_count" %}', {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var b = document.getElementById("donorNotifBadge");
+              if (b) {
+                var count = d.count || 0;
+                b.textContent = count;
+                b.style.display = count > 0 ? "flex" : "none";
+              }
+            })
+            .catch(function () {});
+        }
+        if (document.getElementById("donorNotifBadge")) {
+          updateDonorNotifBadge();
+        }
+      })();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>

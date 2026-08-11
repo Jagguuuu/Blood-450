@@ -1,0 +1,648 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Blood450</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; background: #ffffff; }
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 15px;
+            min-height: 100vh;
+            color: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            margin: 0;
+        }
+        .form-container {
+            max-width: 600px;
+            width: 100%;
+            background: #ffffff;
+            color: #222;
+            border-radius: 20px;
+            padding: 28px 32px 32px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 18px 50px rgba(0,0,0,0.12);
+        }
+        .form-header { text-align: center; margin-bottom: 20px; }
+        .form-header h1 { font-size: 1.25rem; font-weight: 700; color: #111; }
+        .form-header a { display: inline-block; margin-top: 8px; color: #c0392b; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+        .form-header a:hover { text-decoration: underline; }
+        .steps-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.15); transition: background 0.25s ease, transform 0.25s ease; }
+        .step-dot.active { background: #c0392b; transform: scale(1.2); }
+        .step-dot.done { background: rgba(192, 57, 43, 0.55); }
+        .step-line { width: 40px; height: 2px; background: rgba(0,0,0,0.12); }
+        .step-line.done { background: rgba(192, 57, 43, 0.45); }
+        .alert-error { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 0.85rem; background: rgba(192, 57, 43, 0.10); color: #8d1f17; border: 1px solid rgba(192, 57, 43, 0.18); }
+        .field-error { font-size: 0.75rem; color: #c0392b; margin-top: 4px; }
+        .reg-card { background: transparent; border: none; padding: 0 0 20px; margin-bottom: 0; }
+        .step-title { font-size: 0.9rem; font-weight: 600; color: #333; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .form-grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        @media (max-width: 520px) { .form-grid-4, .form-grid-2 { grid-template-columns: 1fr; } }
+        .form-group { margin-bottom: 0; }
+        .form-group.span-2 { grid-column: span 2; }
+        .form-group.span-4 { grid-column: 1 / -1; }
+        @media (max-width: 520px) { .form-group.span-2 { grid-column: span 1; } }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #333; margin-bottom: 5px; }
+        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"], .form-group input[type="number"], .form-group input[type="date"], .form-group select {
+            width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #222;
+        }
+        .form-group input::placeholder { color: #999; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #c0392b; box-shadow: 0 0 0 3px rgba(192,57,43,0.18); }
+        .form-group .help { font-size: 0.72rem; color: #777; margin-top: 4px; }
+        .form-group input[type="file"] { padding: 8px; font-size: 0.85rem; border-radius: 10px; border: 1px solid #ddd; background: #fff; }
+        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; margin-top: 6px; }
+        .radio-group label, .checkbox-group label { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; font-size: 0.85rem; color: #333; }
+        .radio-group input, .checkbox-group input { width: auto; }
+        .wizard-step { display: none; }
+        .wizard-step.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .form-footer { margin-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .btn-secondary { padding: 10px 20px; font-size: 0.9rem; font-weight: 600; color: #333; background: #f4f4f4; border: 1px solid #ddd; border-radius: 999px; cursor: pointer; transition: background 0.15s ease; }
+        .btn-secondary:hover { background: #ededed; }
+        .btn-primary { padding: 12px 28px; font-size: 0.95rem; font-weight: 600; color: #fff; background: linear-gradient(180deg, #c0392b 0%, #a93226 100%); border: none; border-radius: 999px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(192, 57, 43, 0.22); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-primary.hidden { display: none !important; }
+        .btn-submit { width: auto; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.hidden { display: none; }
+        .modal { background: #fff; border-radius: 20px; box-shadow: 0 18px 50px rgba(0,0,0,0.16); max-width: 420px; width: 100%; padding: 40px 32px; border: 1px solid rgba(0,0,0,0.08); }
+        .modal h3 { font-size: 1.2rem; margin-bottom: 12px; color: #111; text-align: center; font-weight: 700; }
+        .blood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+        .blood-btn { padding: 12px; font-size: 1rem; font-weight: 700; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff; cursor: pointer; color: #334155; transition: all 0.2s; }
+        .blood-btn:hover { border-color: #c0392b; background: #fef2f2; color: #c0392b; }
+        .blood-btn.selected { border-color: #c0392b; background: #c0392b; color: #fff; }
+        .modal .btn-continue { width: 100%; padding: 14px; font-weight: 600; color: #fff; background: linear-gradient(180deg, #c0392b 0%, #a93226 100%); border: none; border-radius: 999px; cursor: pointer; font-size: 0.95rem; }
+        .modal .btn-continue:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hidden { display: none !important; }
+        .welcome-modal .modal { max-width: 440px; }
+        .welcome-modal .welcome-icons { display: flex; justify-content: center; gap: 16px; margin-bottom: 16px; }
+        .welcome-modal .welcome-icons span { font-size: 2.2rem; }
+        .welcome-modal .welcome-msg { text-align: center; font-size: 0.95rem; color: #555; line-height: 1.55; margin-bottom: 8px; }
+        .welcome-modal .welcome-ctx { text-align: center; font-size: 0.85rem; color: #666; line-height: 1.5; margin-bottom: 20px; }
+        .link-button:hover { text-decoration: underline; }
+        .btn-google { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 24px; background: #fff; color: #333; border: 1px solid #dadce0; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.2s; }
+        .btn-google:hover { background: #f8fafc; border-color: #c0392b; color: #c0392b; }
+        .google-signin-wrap { text-align: center; margin-bottom: 16px; }
+        .google-divider { text-align: center; margin: 20px 0 16px; font-size: 0.9rem; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h1>🩸 Donor Registration</h1>
+            <a href="{% url 'login' %}">← Back to Login</a>
+        </div>
+
+        <div id="formErrors" class="alert-error hidden"></div>
+        {% if register_error %}<div id="registerError" class="alert-error">{{ register_error }}</div>{% endif %}
+
+        <div class="google-signin-wrap">
+            <a href="{% url 'google_login' %}" class="btn-google">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Sign in with Google
+            </a>
+            <p style="margin: 12px 0 0 0; font-size: 0.85rem; color: #64748b;">You’ll be taken to the donor dashboard after signing in.</p>
+        </div>
+
+        <div class="google-divider">— or register with email —</div>
+
+        <div class="steps-bar">
+            <span class="step-dot active" id="stepDot1" data-step="1"></span>
+            <span class="step-line" id="stepLine1" data-line="1"></span>
+            <span class="step-dot" id="stepDot2" data-step="2"></span>
+            <span class="step-line" id="stepLine2" data-line="2"></span>
+            <span class="step-dot" id="stepDot3" data-step="3"></span>
+        </div>
+
+        <form id="regForm" method="post" action="{% url 'donor_register' %}" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div id="wizardStep1" class="wizard-step active">
+            <div class="reg-card">
+                <div class="step-title">Step 1 — User &amp; Personal details</div>
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label for="id_username">Username *</label>
+                        <input type="text" id="id_username" name="username" value="{{ form.username.value|default:'' }}" placeholder="Enter Username" required maxlength="50" autocomplete="username">
+                        <span class="field-error" data-field="username"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_mobile">Mobile *</label>
+                        <input type="text" id="id_mobile" name="mobile" value="{{ form.mobile.value|default:'' }}" placeholder="e.g. 9618394701 or +919618394701" maxlength="20">
+                        <span class="field-error" data-field="mobile"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_password">Password *</label>
+                        <input type="password" id="id_password" name="password" placeholder="Enter Password" required minlength="8">
+                        <span class="field-error" data-field="password"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_confirm_password">Confirm Password *</label>
+                        <input type="password" id="id_confirm_password" name="confirm_password" placeholder=" Enter Confirm  Password" required>
+                        <span class="field-error" data-field="confirm_password"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_gender">Gender</label>
+                        <select id="id_gender" name="gender">
+                            <option value="">-- Select --</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                            <option value="O">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_date_of_birth">Date of Birth</label>
+                        <input type="date" id="id_date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}">
+                        <span class="help">For matching.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_alternate_mobile">Alternate Mobile</label>
+                        <input type="text" id="id_alternate_mobile" name="alternate_mobile" value="{{ form.alternate_mobile.value|default:'' }}" placeholder="10-digit" maxlength="15">
+                        <span class="field-error" data-field="alternate_mobile"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_preferred_language">Preferred Language</label>
+                        <select id="id_preferred_language" name="preferred_language">
+                            <option value="">-- Select --</option>
+                            <option value="english" {% if form.preferred_language.value == 'english' %}selected{% endif %}>English</option>
+                            <option value="hindi" {% if form.preferred_language.value == 'hindi' %}selected{% endif %}>Hindi</option>
+                            <option value="odia" {% if form.preferred_language.value == 'odia' %}selected{% endif %}>Odia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_preferred_contact_time">Preferred Contact Time</label>
+                        <select id="id_preferred_contact_time" name="preferred_contact_time">
+                            <option value="">-- Select --</option>
+                            <option value="morning" {% if form.preferred_contact_time.value == 'morning' %}selected{% endif %}>Morning</option>
+                            <option value="afternoon" {% if form.preferred_contact_time.value == 'afternoon' %}selected{% endif %}>Afternoon</option>
+                            <option value="evening" {% if form.preferred_contact_time.value == 'evening' %}selected{% endif %}>Evening</option>
+                            <option value="any" {% if form.preferred_contact_time.value == 'any' %}selected{% endif %}>Any</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_occupation">Occupation</label>
+                        <input type="text" id="id_occupation" name="occupation" value="{{ form.occupation.value|default:'' }}" placeholder="Enter Occupation" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_emergency_contact_name">Emergency Contact Name</label>
+                        <input type="text" id="id_emergency_contact_name" name="emergency_contact_name" value="{{ form.emergency_contact_name.value|default:'' }}" placeholder="Enter Emergency Contact Name" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_emergency_contact_number">Emergency Contact Number</label>
+                        <input type="text" id="id_emergency_contact_number" name="emergency_contact_number" value="{{ form.emergency_contact_number.value|default:'' }}" placeholder="Enter Emergency Phone Number" maxlength="15">
+                        <span class="field-error" data-field="emergency_contact_number"></span>
+                    </div>
+                    <div class="form-group span-2">
+                        <label for="id_profile_photo">Profile Photo</label>
+                        <input type="file" id="id_profile_photo" name="profile_photo" accept="image/*">
+                        <span class="help">Optional. JPG, PNG, etc.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <span></span>
+                <button type="button" class="btn-primary" id="btnNext1">Next</button>
+            </div>
+            </div>
+
+            <div id="wizardStep2" class="wizard-step">
+            <div class="reg-card">
+                <h2>Location</h2>
+                <input type="hidden" name="last_lat" id="id_last_lat" value="">
+                <input type="hidden" name="last_lng" id="id_last_lng" value="">
+                <p id="locationFetchStatus" style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px; display: none;">Fetching your location for better request matching…</p>
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label for="id_state">State</label>
+                        <input type="text" id="id_state" name="state" value="{{ form.state.value|default:'' }}" placeholder="State">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_city">City</label>
+                        <input type="text" id="id_city" name="city" value="{{ form.city.value|default:'' }}" placeholder="City">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_area">Area / Locality</label>
+                        <input type="text" id="id_area" name="area" value="{{ form.area.value|default:'' }}" placeholder="Area">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_pincode">Pincode</label>
+                        <input type="text" id="id_pincode" name="pincode" value="{{ form.pincode.value|default:'' }}" placeholder="Pincode">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_weight_kg">Weight (kg)</label>
+                        <input type="number" id="id_weight_kg" name="weight_kg" value="{{ form.weight_kg.value|default:'' }}" placeholder="Optional" step="0.1" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn-secondary" id="btnPrev2">Previous</button>
+                <button type="button" class="btn-primary" id="btnNext2">Next</button>
+            </div>
+            </div>
+
+            <div id="wizardStep3" class="wizard-step">
+            <div class="reg-card">
+                <div class="step-title">Step 3 — Health &amp; Availability</div>
+                <div class="form-grid-4">
+                    <div class="form-group span-2">
+                        <label>Donated blood before?</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="donated_before" value=""> --</label>
+                            <label><input type="radio" name="donated_before" value="yes"> Yes</label>
+                            <label><input type="radio" name="donated_before" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_last_donation_date">Last donation date</label>
+                        <input type="date" id="id_last_donation_date" name="last_donation_date" value="{{ form.last_donation_date.value|default:'' }}">
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Medical conditions?</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="medical_conditions" value=""> --</label>
+                            <label><input type="radio" name="medical_conditions" value="yes"> Yes</label>
+                            <label><input type="radio" name="medical_conditions" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Currently healthy?</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="currently_healthy" value=""> --</label>
+                            <label><input type="radio" name="currently_healthy" value="yes"> Yes</label>
+                            <label><input type="radio" name="currently_healthy" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Emergency donation? *</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="emergency_available" value="yes" checked> Yes</label>
+                            <label><input type="radio" name="emergency_available" value="no"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Contact preference</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="preferred_contact" value="call" checked> Call</label>
+                            <label><input type="radio" name="preferred_contact" value="whatsapp"> WhatsApp</label>
+                            <label><input type="radio" name="preferred_contact" value="sms"> SMS</label>
+                        </div>
+                    </div>
+                    <div class="form-group span-4 checkbox-group">
+                        <label><input type="checkbox" name="consent_contact" id="id_consent_contact" required> I agree to be contacted for blood donation requests</label>
+                        <span class="field-error" data-field="consent_contact"></span>
+                    </div>
+                    <div class="form-group span-4 checkbox-group">
+                        <label><input type="checkbox" name="consent_terms" id="id_consent_terms" required> I accept Terms &amp; Privacy Policy</label>
+                        <span class="field-error" data-field="consent_terms"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn-secondary" id="btnPrev3">Previous</button>
+                <button type="submit" class="btn-primary" id="btnSubmit">Register</button>
+            </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Donor only: OTP verification (after register, before blood donation) -->
+    <div id="otpModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3>Verify your mobile number</h3>
+            <p class="welcome-msg">We've sent a 6-digit OTP to your registered mobile number. Enter it below.</p>
+            <div id="otpModalError" class="alert-error hidden"></div>
+            <div class="form-group" style="margin: 16px 0;">
+                <label for="id_otp">OTP</label>
+                <input type="text" id="id_otp" name="otp" placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code" style="width:100%; padding:12px; font-size:1.2rem; letter-spacing:0.3em; text-align:center;">
+            </div>
+            <button type="button" class="btn-continue" id="btnOtpVerify">Verify OTP</button>
+            <p style="text-align:center; margin-top:12px; font-size:0.85rem; color:#64748b;">
+                Didn't receive? <button type="button" id="btnResendOtp" class="link-button" style="background:none; border:none; color:#c0392b; font-weight:600; cursor:pointer; padding:0;">Resend OTP</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Donor only: Step 1 – Blood Donation popup -->
+    <div id="bloodDonationModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3>🩸 Blood Donation</h3>
+            <p class="welcome-msg">You are signing up as a <strong>Blood Donor</strong>. Your contribution can save up to three lives and helps patients in emergencies, surgeries, and critical care.</p>
+            <p class="welcome-ctx">Thank you for choosing to make a difference.</p>
+            <button type="button" class="btn-continue" id="btnBloodDonationContinue">Continue</button>
+        </div>
+    </div>
+
+    <!-- Donor only: Step 2 – Thank You / Happy popup -->
+    <div id="welcomeModal" class="modal-overlay welcome-modal hidden">
+        <div class="modal">
+            <h3>Thank you for signing up</h3>
+            <div class="welcome-icons">
+                <span title="Donate">🩸</span>
+                <span title="Save lives">❤️</span>
+                <span title="Help others">🤝</span>
+            </div>
+            <p class="welcome-msg">You're choosing to <strong>donate blood to needy people</strong>. Every donation can save up to three lives and helps patients in emergencies, surgeries, and critical care.</p>
+            <p class="welcome-ctx">Next, select your blood group so we can match you with requests. Then you'll be taken to your donor dashboard.</p>
+            <button type="button" class="btn-continue" id="btnWelcomeContinue">Continue → Choose blood group</button>
+        </div>
+    </div>
+
+    <!-- Step 2: Blood group modal – form POST so server can set session cookie and redirect -->
+    <div id="bloodGroupModal" class="modal-overlay hidden">
+        <div class="modal">
+            <form id="bloodGroupForm" method="post" action="{% url 'donor_register_select_blood_group' %}">
+                {% csrf_token %}
+                <input type="hidden" name="blood_group" id="bloodGroupInput" value="">
+                <h3>Select your blood group</h3>
+                <div class="blood-grid" id="bloodGrid">
+                    <button type="button" class="blood-btn" data-bg="A+">A+</button>
+                    <button type="button" class="blood-btn" data-bg="A-">A-</button>
+                    <button type="button" class="blood-btn" data-bg="B+">B+</button>
+                    <button type="button" class="blood-btn" data-bg="B-">B-</button>
+                    <button type="button" class="blood-btn" data-bg="AB+">AB+</button>
+                    <button type="button" class="blood-btn" data-bg="AB-">AB-</button>
+                    <button type="button" class="blood-btn" data-bg="O+">O+</button>
+                    <button type="button" class="blood-btn" data-bg="O-">O-</button>
+                </div>
+                <div id="bloodModalError" class="alert-error hidden"></div>
+                <button type="button" class="btn-continue" id="btnBloodContinue" disabled>Continue → Go to Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var form = document.getElementById('regForm');
+        var formErrors = document.getElementById('formErrors');
+        var bloodDonationModal = document.getElementById('bloodDonationModal');
+        var btnBloodDonationContinue = document.getElementById('btnBloodDonationContinue');
+        var welcomeModal = document.getElementById('welcomeModal');
+        var btnWelcomeContinue = document.getElementById('btnWelcomeContinue');
+        var bloodModal = document.getElementById('bloodGroupModal');
+        var bloodGrid = document.getElementById('bloodGroupModal').querySelector('#bloodGrid');
+        var bloodContinue = document.getElementById('btnBloodContinue');
+        var bloodModalError = document.getElementById('bloodModalError');
+        var selectedBg = null;
+        var currentStep = 1;
+        var totalSteps = 3;
+
+        function getCookie(name) {
+            var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return v ? v[2] : null;
+        }
+
+        function setStepError(field, msg) {
+            var fe = document.querySelector('.field-error[data-field="' + field + '"]');
+            if (fe) fe.textContent = msg || '';
+        }
+
+        function clearStepErrors(fields) {
+            (fields || []).forEach(function(f) { setStepError(f, ''); });
+        }
+
+        function validateStep1() {
+            clearStepErrors(['username', 'mobile', 'password', 'confirm_password']);
+            var username = (form.querySelector('#id_username').value || '').trim();
+            var mobile = (form.querySelector('#id_mobile').value || '').trim().replace(/\D/g, '');
+            var password = form.querySelector('#id_password').value || '';
+            var confirm = form.querySelector('#id_confirm_password').value || '';
+            var ok = true;
+            if (!username) { setStepError('username', 'Required.'); ok = false; }
+            if (!mobile) { setStepError('mobile', 'Required.'); ok = false; }
+            else if (mobile.length < 10) { setStepError('mobile', 'Enter a valid mobile number (at least 10 digits).'); ok = false; }
+            if (!password) { setStepError('password', 'Required.'); ok = false; }
+            if (!confirm) { setStepError('confirm_password', 'Required.'); ok = false; }
+            else if (password !== confirm) { setStepError('confirm_password', 'Passwords do not match.'); ok = false; }
+            return ok;
+        }
+
+        function validateStep3() {
+            clearStepErrors(['consent_contact', 'consent_terms']);
+            var consentContact = form.querySelector('#id_consent_contact').checked;
+            var consentTerms = form.querySelector('#id_consent_terms').checked;
+            var ok = true;
+            if (!consentContact) { setStepError('consent_contact', 'Please agree to be contacted.'); ok = false; }
+            if (!consentTerms) { setStepError('consent_terms', 'Please accept Terms & Privacy Policy.'); ok = false; }
+            return ok;
+        }
+
+        function goToStep(step) {
+            document.querySelectorAll('.wizard-step').forEach(function(el) { el.classList.remove('active'); });
+            var el = document.getElementById('wizardStep' + step);
+            if (el) el.classList.add('active');
+            currentStep = step;
+            document.querySelectorAll('.step-dot').forEach(function(dot) {
+                var n = parseInt(dot.getAttribute('data-step'), 10);
+                dot.classList.remove('active', 'done');
+                if (n === step) dot.classList.add('active');
+                else if (n < step) dot.classList.add('done');
+            });
+            document.querySelectorAll('.step-line').forEach(function(line) {
+                var n = parseInt(line.getAttribute('data-line'), 10);
+                line.classList.toggle('done', n < step);
+            });
+            if (step === 2) fetchAndStoreLocation();
+        }
+
+        document.getElementById('btnNext1').addEventListener('click', function() {
+            if (!validateStep1()) return;
+            formErrors.classList.add('hidden');
+            goToStep(2);
+        });
+        document.getElementById('btnPrev2').addEventListener('click', function() { goToStep(1); });
+        document.getElementById('btnNext2').addEventListener('click', function() { goToStep(3); });
+
+        function fetchAndStoreLocation() {
+            var statusEl = document.getElementById('locationFetchStatus');
+            var latInput = document.getElementById('id_last_lat');
+            var lngInput = document.getElementById('id_last_lng');
+            if (!latInput || !lngInput) return;
+            if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Fetching your location for better request matching…'; }
+            if (!navigator.geolocation) {
+                if (statusEl) { statusEl.textContent = 'Location unavailable in this browser. You can set it later from your dashboard.'; }
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    latInput.value = pos.coords.latitude.toFixed(6);
+                    lngInput.value = pos.coords.longitude.toFixed(6);
+                    if (statusEl) { statusEl.textContent = 'Location captured. It will be saved when you register.'; statusEl.style.color = '#059669'; }
+                },
+                function() {
+                    if (statusEl) { statusEl.textContent = 'Location not available. You can set it later from your dashboard.'; }
+                },
+                { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+            );
+        }
+        document.getElementById('btnPrev3').addEventListener('click', function() { goToStep(2); });
+
+        function showErrors(errors) {
+            if (!errors || typeof errors !== 'object') return;
+            var msg = [];
+            document.querySelectorAll('.field-error[data-field]').forEach(function(el) { el.textContent = ''; });
+            for (var k in errors) {
+                var arr = errors[k];
+                var text = Array.isArray(arr) ? arr[0] : arr;
+                msg.push((k + ': ' + text));
+                var fe = document.querySelector('.field-error[data-field="' + k + '"]');
+                if (fe) fe.textContent = text;
+            }
+            formErrors.textContent = msg.join(' ');
+            formErrors.classList.remove('hidden');
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!validateStep1()) { goToStep(1); return; }
+            if (!validateStep3()) { goToStep(3); return; }
+            formErrors.classList.add('hidden');
+            document.querySelectorAll('.field-error[data-field]').forEach(function(el) { el.textContent = ''; });
+            var btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            var fd = new FormData(form);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+            xhr.onload = function() {
+                btn.disabled = false;
+                var res = {};
+                try { res = JSON.parse(xhr.responseText); } catch (err) { res = {}; }
+                if (xhr.status === 200 && res.success) {
+                    selectedBg = null;
+                    if (res.step === 'otp') {
+                        document.getElementById('otpModal').classList.remove('hidden');
+                        document.getElementById('id_otp').value = '';
+                        document.getElementById('otpModalError').classList.add('hidden');
+                    } else {
+                        bloodDonationModal.classList.remove('hidden');
+                    }
+                } else {
+                    showErrors(res.errors || { __all__: res.message || 'Registration failed.' });
+                }
+            };
+            xhr.onerror = function() {
+                btn.disabled = false;
+                showErrors({ __all__: 'Cannot reach server. Check your internet connection and ensure the app is running (python manage.py runserver).' });
+            };
+            xhr.send(fd);
+        });
+
+        var otpModal = document.getElementById('otpModal');
+        var otpInput = document.getElementById('id_otp');
+        var otpModalError = document.getElementById('otpModalError');
+        var btnOtpVerify = document.getElementById('btnOtpVerify');
+        var btnResendOtp = document.getElementById('btnResendOtp');
+
+        function showOtpError(msg) {
+            if (otpModalError) {
+                otpModalError.textContent = msg || '';
+                otpModalError.classList.toggle('hidden', !msg);
+            }
+        }
+
+        if (btnOtpVerify) {
+            btnOtpVerify.addEventListener('click', function() {
+                var otp = (otpInput && otpInput.value || '').trim().replace(/\D/g, '');
+                showOtpError('');
+                if (otp.length !== 6) {
+                    showOtpError('Please enter a 6-digit OTP.');
+                    return;
+                }
+                btnOtpVerify.disabled = true;
+                fetch('{% url "donor_verify_otp" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ otp: otp }),
+                    credentials: 'same-origin'
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    btnOtpVerify.disabled = false;
+                    if (res.success && res.step === 'blood_group') {
+                        otpModal.classList.add('hidden');
+                        bloodDonationModal.classList.remove('hidden');
+                    } else {
+                        showOtpError(res.message || 'Verification failed.');
+                    }
+                })
+                .catch(function() {
+                    btnOtpVerify.disabled = false;
+                    showOtpError('Network error. Please try again.');
+                });
+            });
+        }
+
+        if (btnResendOtp) {
+            btnResendOtp.addEventListener('click', function() {
+                showOtpError('');
+                btnResendOtp.disabled = true;
+                fetch('{% url "donor_resend_otp" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: '{}',
+                    credentials: 'same-origin'
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    btnResendOtp.disabled = false;
+                    if (res.success) showOtpError('OTP sent again to your mobile.');
+                    else showOtpError(res.message || 'Could not resend.');
+                })
+                .catch(function() {
+                    btnResendOtp.disabled = false;
+                    showOtpError('Network error.');
+                });
+            });
+        }
+
+        btnBloodDonationContinue.addEventListener('click', function() {
+            bloodDonationModal.classList.add('hidden');
+            welcomeModal.classList.remove('hidden');
+        });
+
+        btnWelcomeContinue.addEventListener('click', function() {
+            welcomeModal.classList.add('hidden');
+            bloodModal.classList.remove('hidden');
+            bloodGrid.querySelectorAll('.blood-btn').forEach(function(b) { b.classList.remove('selected'); });
+            bloodContinue.disabled = true;
+            bloodModalError.classList.add('hidden');
+        });
+
+        bloodGrid.querySelectorAll('.blood-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                bloodGrid.querySelectorAll('.blood-btn').forEach(function(b) { b.classList.remove('selected'); });
+                btn.classList.add('selected');
+                selectedBg = btn.getAttribute('data-bg');
+                bloodContinue.disabled = false;
+            });
+        });
+
+        bloodContinue.addEventListener('click', function() {
+            if (!selectedBg) return;
+            bloodModalError.classList.add('hidden');
+            document.getElementById('bloodGroupInput').value = selectedBg;
+            document.getElementById('bloodGroupForm').submit();
+        });
+    })();
+    </script>
+</body>
+</html>

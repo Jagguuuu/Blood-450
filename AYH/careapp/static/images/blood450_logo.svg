@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="Blood 450 logo">
+  <defs>
+    <linearGradient id="drop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#b91c1c"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="92" fill="#ffffff" stroke="#fecaca" stroke-width="6"/>
+  <path d="M100 40c0 0 48 48 48 88 0 26.5-21.5 48-48 48s-48-21.5-48-48c0-40 48-88 48-88 4-5 12-5 16 0z" fill="url(#drop)"/>
+  <text x="100" y="180" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#991b1b">Blood 450</text>
+</svg>

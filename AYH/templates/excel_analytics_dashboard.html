@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Excel Analytics – Dashboard{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .analytics-dashboard-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    .analytics-stats {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .analytics-stat {
+        background: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+        border-left: 3px solid #dc2626;
+    }
+    .analytics-stat .num { font-size: 22px; font-weight: 700; color: #dc2626; }
+    .analytics-stat .lbl { font-size: 12px; color: #6b7280; text-transform: uppercase; }
+    .analytics-actions a,
+    .analytics-actions .analytics-upload-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .analytics-actions a:hover,
+    .analytics-actions .analytics-upload-btn:hover { opacity: 0.95; }
+    .analytics-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .analytics-modal-overlay.show {
+        display: flex;
+    }
+    .analytics-modal {
+        background: white;
+        border-radius: 12px;
+        max-width: 480px;
+        width: 100%;
+        padding: 24px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        border-left: 4px solid #dc2626;
+    }
+    .analytics-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #dc2626;
+    }
+    .analytics-modal-header h3 { margin: 0; font-size: 18px; color: #1f2937; }
+    .analytics-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        line-height: 1;
+    }
+    .analytics-modal-close:hover { color: #dc2626; }
+    .analytics-modal-hint { font-size: 13px; color: #6b7280; margin: 0 0 16px 0; }
+    .analytics-form-group { margin-bottom: 12px; }
+    .analytics-form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #374151; }
+    .analytics-form-group input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px dashed #e5e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+        font-size: 14px;
+    }
+    .analytics-hint { font-size: 12px; color: #9ca3af; margin: 0 0 16px 0; }
+    .analytics-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .analytics-btn-cancel {
+        padding: 10px 20px;
+        background: #f3f4f6;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .analytics-btn-submit {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .analytics-btn-submit:hover { opacity: 0.95; }
+    .analytics-section {
+        margin-bottom: 28px;
+    }
+    .analytics-section h3 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        color: #1f2937;
+    }
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+        gap: 20px;
+    }
+    .chart-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        overflow: hidden;
+        padding: 12px;
+    }
+    .chart-card .chart-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+    .chart-card .chart-container {
+        min-height: 320px;
+    }
+    .summary-table-wrap {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        overflow-x: auto;
+        padding: 16px;
+    }
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    .summary-table th,
+    .summary-table td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .summary-table th {
+        background: #f9fafb;
+        font-weight: 600;
+        color: #374151;
+    }
+    .summary-table tr:hover td {
+        background: #fef2f2;
+    }
+    .analytics-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .analytics-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6b7280;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="analytics-dashboard-header">
+    <div class="analytics-stats">
+        <div class="analytics-stat">
+            <div class="num">{{ row_count }}</div>
+            <div class="lbl">Rows</div>
+        </div>
+        <div class="analytics-stat">
+            <div class="num">{{ column_count }}</div>
+            <div class="lbl">Columns</div>
+        </div>
+    </div>
+    <div class="analytics-actions">
+        <button type="button" class="analytics-upload-btn" id="analyticsOpenUploadModal">Upload Excel file</button>
+        {% if data_source == 'upload' %}
+        <a href="{% url 'excel_analytics_live' %}">Live from database</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload Excel modal (form opens here; initially show live dashboard) -->
+<div id="analyticsUploadModal" class="analytics-modal-overlay" aria-hidden="true">
+    <div class="analytics-modal">
+        <div class="analytics-modal-header">
+            <h3>Upload Excel file</h3>
+            <button type="button" class="analytics-modal-close" id="analyticsCloseUploadModal" aria-label="Close">&times;</button>
+        </div>
+        <p class="analytics-modal-hint">Supported: .xlsx and .xls. The first sheet will be used. Numeric and categorical columns are auto-detected for charts.</p>
+        <form method="post" action="{% url 'excel_analytics_upload' %}" enctype="multipart/form-data" id="analyticsUploadForm">
+            {% csrf_token %}
+            <div class="analytics-form-group">
+                <label for="id_excel_file_modal">Choose file</label>
+                <input type="file" name="excel_file" id="id_excel_file_modal" accept=".xlsx,.xls" required>
+            </div>
+            <p class="analytics-hint">Max recommended: 50,000 rows x 50 columns.</p>
+            <div class="analytics-modal-actions">
+                <button type="button" class="analytics-btn-cancel" id="analyticsCancelUpload">Cancel</button>
+                <button type="submit" class="analytics-btn-submit">Upload and view dashboard</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if error %}
+<div class="analytics-error">{{ error }}</div>
+{% endif %}
+
+{% if charts %}
+<div class="analytics-section">
+    <h3>Charts</h3>
+    <div class="chart-grid">
+        {% for chart in charts %}
+        <div class="chart-card">
+            <div class="chart-title">{{ chart.title }}</div>
+            <div class="chart-container">
+                {{ chart.html|safe }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif not error %}
+<div class="analytics-empty">
+    <p>No charts could be generated. Ensure your Excel has numeric or categorical columns.</p>
+</div>
+{% endif %}
+
+{% if summary_table %}
+<div class="analytics-section">
+    <h3>Data summary</h3>
+    <div class="summary-table-wrap">
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Type</th>
+                    <th>Non-null</th>
+                    <th>Nulls</th>
+                    <th>Unique</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Mean</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary_table %}
+                <tr>
+                    <td>{{ row.column }}</td>
+                    <td>{{ row.dtype }}</td>
+                    <td>{{ row.non_null }}</td>
+                    <td>{{ row.nulls }}</td>
+                    <td>{{ row.unique }}</td>
+                    <td>{{ row.min|default:"–" }}</td>
+                    <td>{{ row.max|default:"–" }}</td>
+                    <td>{{ row.mean|default:"–" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+    var overlay = document.getElementById('analyticsUploadModal');
+    var openBtn = document.getElementById('analyticsOpenUploadModal');
+    var closeBtn = document.getElementById('analyticsCloseUploadModal');
+    var cancelBtn = document.getElementById('analyticsCancelUpload');
+    function openModal() {
+        if (overlay) {
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+    }
+    function closeModal() {
+        if (overlay) {
+            overlay.classList.remove('show');
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+    }
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (overlay) overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+    });
+})();
+</script>
+{% endblock %}

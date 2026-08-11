@@ -1,0 +1,245 @@
+{# Fragment for dashboard modal - no base template; show all data, no link #}
+<div class="request-detail-modal-inner" style="max-height: 75vh; overflow-y: auto;">
+    <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px;">Blood Request #{{ blood_request.id }}</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Status</div>
+            <div style="font-weight: 600; color: #1f2937;">{{ blood_request.get_status_display|default:blood_request.status }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Blood Group</div>
+            <div style="font-weight: 600; color: #dc2626;">{{ blood_request.blood_group }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Units</div>
+            <div style="font-weight: 600;">{{ blood_request.units_needed }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Urgency</div>
+            <div style="font-weight: 600;"><span style="padding: 2px 8px; border-radius: 6px; font-size: 12px; background: {% if blood_request.urgency == 'critical' %}#dc2626{% elif blood_request.urgency == 'high' %}#f59e0b{% else %}#3b82f6{% endif %}; color: white;">{{ blood_request.get_urgency_display }}</span></div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Hospital</div>
+            <div style="font-weight: 600;">{{ blood_request.hospital_id|default:"—" }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">City / State</div>
+            <div style="font-weight: 600;">{{ blood_request.city|default:"—" }} / {{ blood_request.state|default:"—" }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Source</div>
+            <div style="font-weight: 600;">{{ blood_request.get_source_display|default:blood_request.source|default:"—" }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">SLA (min)</div>
+            <div style="font-weight: 600;">{{ blood_request.sla_minutes|default:"—" }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Created</div>
+            <div style="font-weight: 600;">{{ blood_request.created_at|date:"M d, Y H:i" }}</div>
+        </div>
+        <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase;">Created By</div>
+            <div style="font-weight: 600;">{{ blood_request.created_by.username|default:"—" }}</div>
+        </div>
+    </div>
+    {% if blood_request.note %}
+    <div style="margin-bottom: 16px; padding: 12px; background: #f0f9ff; border-radius: 8px; font-size: 14px;">{{ blood_request.note }}</div>
+    {% endif %}
+    {% if blood_request.location_name or blood_request.req_lat %}
+    <div style="margin-bottom: 16px; padding: 12px; background: #ecfdf5; border-radius: 8px; font-size: 13px;">
+        <strong>Location:</strong> {{ blood_request.location_name|default:"" }} {% if blood_request.req_lat and blood_request.req_lng %}({{ blood_request.req_lat }}, {{ blood_request.req_lng }}) within {{ blood_request.radius_km }} km{% endif %}
+    </div>
+    {% endif %}
+    <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+        <div style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">{{ notified_count }}</div>
+            <div style="font-size: 12px; opacity: 0.9;">Donors Notified</div>
+        </div>
+        <div style="flex: 1; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">{{ accepted_responses|length }}</div>
+            <div style="font-size: 12px; opacity: 0.9;">Donors Accepted</div>
+        </div>
+    </div>
+    <div style="margin-bottom: 8px;"><strong style="color: #1f2937;">Donors to track</strong></div>
+    <p style="font-size: 11px; color: #6b7280; margin: 0 0 8px 0;">Compatible blood groups are notified (e.g. O- can donate to O+, so O- donors correctly appear for O+ requests).</p>
+    {% if notified_donors_list %}
+    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                    <th style="padding: 8px 10px; text-align: left;">ID</th>
+                    <th style="padding: 8px 10px; text-align: left;">Name</th>
+                    <th style="padding: 8px 10px; text-align: left;">Blood group</th>
+                    <th style="padding: 8px 10px; text-align: left;">Phone</th>
+                    <th style="padding: 8px 10px; text-align: left;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in notified_donors_list %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 8px 10px; font-size: 12px; color: #6b7280;">{{ d.donor_id }}</td>
+                    <td style="padding: 8px 10px; font-weight: 600;">{{ d.username }}</td>
+                    <td style="padding: 8px 10px;">{{ d.blood_group|default:"—" }}</td>
+                    <td style="padding: 8px 10px;">{{ d.phone|default:"—" }}</td>
+                    <td style="padding: 8px 10px;">
+                        {% if d.status_key == 'accepted' %}
+                        <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px;">Accepted</span>
+                        {% elif d.status_key == 'rejected' %}
+                        <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px;">Declined</span>
+                        {% else %}
+                        <span style="background: #6b7280; color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px;">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">No donors were notified for this request.</p>
+    {% endif %}
+    {% if active_assignments or standby_assignments %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Active donors</strong> <span style="font-size: 11px; color: #6b7280;">(nearest first; on reject, standby is promoted)</span></div>
+    {% if active_assignments %}
+    <div style="max-height: 140px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead><tr style="background: #f0fdf4;"><th style="padding: 6px 10px; text-align: left;">Name</th><th style="padding: 6px 10px;">Blood</th><th style="padding: 6px 10px;">Phone</th><th style="padding: 6px 10px;">Distance</th><th style="padding: 6px 10px;">State</th></tr></thead>
+            <tbody>
+                {% for item in active_assignments %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 6px 10px; font-weight: 600;">{{ item.username }}</td>
+                    <td style="padding: 6px 10px;">{{ item.blood_group|default:"—" }}</td>
+                    <td style="padding: 6px 10px;">{{ item.phone|default:"—" }}</td>
+                    <td style="padding: 6px 10px;">{% if item.distance_km != None %}{{ item.distance_km }} km{% else %}—{% endif %}</td>
+                    <td style="padding: 6px 10px;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; {% if item.state == 'ACCEPTED' %}background:#10b981;color:white{% elif item.state == 'REJECTED' %}background:#ef4444;color:white{% else %}background:#6b7280;color:white{% endif %}">{{ item.state }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">No active pool for this request (created without location or pool not used).</p>
+    {% endif %}
+    <div style="margin-bottom: 8px;"><strong style="color: #1f2937;">Standby donors</strong></div>
+    {% if standby_assignments %}
+    <div style="max-height: 120px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead><tr style="background: #fef3c7;"><th style="padding: 6px 10px; text-align: left;">Name</th><th style="padding: 6px 10px;">Blood</th><th style="padding: 6px 10px;">Phone</th><th style="padding: 6px 10px;">Distance</th><th style="padding: 6px 10px;">State</th></tr></thead>
+            <tbody>
+                {% for item in standby_assignments %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 6px 10px; font-weight: 600;">{{ item.username }}</td>
+                    <td style="padding: 6px 10px;">{{ item.blood_group|default:"—" }}</td>
+                    <td style="padding: 6px 10px;">{{ item.phone|default:"—" }}</td>
+                    <td style="padding: 6px 10px;">{% if item.distance_km != None %}{{ item.distance_km }} km{% else %}—{% endif %}</td>
+                    <td style="padding: 6px 10px;"><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #6b7280; color: white;">{{ item.state }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 16px;">No standby donors.</p>
+    {% endif %}
+    {% endif %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Accepted Donors</strong></div>
+    {% if accepted_responses %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;"><th style="padding: 8px 12px; text-align: left;">Donor</th><th style="padding: 8px 12px;">Phone</th><th style="padding: 8px 12px;">Blood Group</th><th style="padding: 8px 12px;">Distance</th><th style="padding: 8px 12px;">Responded</th></tr></thead>
+        <tbody>
+            {% for item in accepted_with_distance %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 8px 12px;"><strong>{{ item.response.donor.username }}</strong></td>
+                <td style="padding: 8px 12px;">{{ item.response.donor.donor_profile.phone }}</td>
+                <td style="padding: 8px 12px;">{{ item.response.donor.donor_profile.blood_group }}</td>
+                <td style="padding: 8px 12px;">{% if item.distance_km != None %}{{ item.distance_km }} km{% else %}—{% endif %}</td>
+                <td style="padding: 8px 12px;">{{ item.response.responded_at|date:"M d, H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">No donors have accepted yet.</p>
+    {% endif %}
+    {% if timeline_events %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Timeline</strong></div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb;"><th style="padding: 6px 10px; text-align: left;">Event</th><th style="padding: 6px 10px;">Actor</th><th style="padding: 6px 10px;">Time</th></tr></thead>
+        <tbody>
+            {% for ev in timeline_events %}
+            <tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 6px 10px;">{{ ev.get_event_type_display|default:ev.event_type }}</td><td style="padding: 6px 10px;">{{ ev.get_actor_display|default:ev.actor }}</td><td style="padding: 6px 10px;">{{ ev.event_time|date:"M d, H:i" }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if eta_trackings %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">ETA Tracking</strong></div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb;"><th style="padding: 6px 10px; text-align: left;">Source</th><th style="padding: 6px 10px;">Committed At</th><th style="padding: 6px 10px;">ETA (min)</th><th style="padding: 6px 10px;">Actual Arrival</th><th style="padding: 6px 10px;">Breached</th></tr></thead>
+        <tbody>
+            {% for eta in eta_trackings %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 6px 10px;">{{ eta.source }}</td>
+                <td style="padding: 6px 10px;">{{ eta.committed_at|date:"M d, H:i"|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ eta.committed_eta_min|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ eta.actual_arrival_at|date:"M d, H:i"|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{% if eta.eta_breached %}Yes ({{ eta.breach_minutes }} min){% else %}No{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if delay_reasons %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Delay Reasons</strong></div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb;"><th style="padding: 6px 10px; text-align: left;">Stage</th><th style="padding: 6px 10px;">Reason</th><th style="padding: 6px 10px;">Category</th><th style="padding: 6px 10px;">Minutes</th><th style="padding: 6px 10px;">Resolved</th></tr></thead>
+        <tbody>
+            {% for d in delay_reasons %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 6px 10px;">{{ d.get_stage_display|default:d.stage }}</td>
+                <td style="padding: 6px 10px;">{{ d.delay_reason }}</td>
+                <td style="padding: 6px 10px;">{{ d.get_delay_category_display|default:d.delay_category }}</td>
+                <td style="padding: 6px 10px;">{{ d.delay_minutes|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ d.resolved|yesno:"Yes,No" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if donor_assignments %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Donor Assignments</strong></div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb;"><th style="padding: 6px 10px; text-align: left;">Donor</th><th style="padding: 6px 10px;">Type</th><th style="padding: 6px 10px;">Status</th><th style="padding: 6px 10px;">Assigned</th><th style="padding: 6px 10px;">ETA (min)</th><th style="padding: 6px 10px;">Distance (km)</th></tr></thead>
+        <tbody>
+            {% for a in donor_assignments %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 6px 10px;">{{ a.donor.username|default:a.donor_master|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ a.get_donor_type_display|default:a.donor_type }}</td>
+                <td style="padding: 6px 10px;">{{ a.get_status_display|default:a.status }}</td>
+                <td style="padding: 6px 10px;">{{ a.assigned_at|date:"M d, H:i" }}</td>
+                <td style="padding: 6px 10px;">{{ a.eta_minutes|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ a.distance_km|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if fallback_actions %}
+    <div style="margin-bottom: 12px;"><strong style="color: #1f2937;">Fallback Actions</strong></div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
+        <thead><tr style="background: #f9fafb;"><th style="padding: 6px 10px; text-align: left;">Type</th><th style="padding: 6px 10px;">Trigger Reason</th><th style="padding: 6px 10px;">Stage</th><th style="padding: 6px 10px;">Triggered</th><th style="padding: 6px 10px;">Success</th></tr></thead>
+        <tbody>
+            {% for f in fallback_actions %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 6px 10px;">{{ f.get_fallback_type_display|default:f.fallback_type }}</td>
+                <td style="padding: 6px 10px;">{{ f.trigger_reason|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ f.trigger_stage|default:"—" }}</td>
+                <td style="padding: 6px 10px;">{{ f.triggered_at|date:"M d, H:i" }}</td>
+                <td style="padding: 6px 10px;">{{ f.success|yesno:"Yes,No" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>

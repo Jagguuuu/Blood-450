@@ -1,0 +1,744 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile - Blood450</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+        /* =========================
+        LIGHT THEME (ALL) - DROP IN
+        ========================= */
+     
+     /* Base */
+     * { margin: 0; padding: 0; box-sizing: border-box; }
+     
+     html, body {
+         height: 100%;
+         background: #ffffff;
+     }
+     
+     body {
+         font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+         background-color: #ffffff;
+         font-size: 15px;
+         min-height: 100vh;
+         color: #222;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         padding: 24px;
+         margin: 0;
+     }
+     
+     /* Welcome modal */
+     .welcome-overlay {
+         position: fixed;
+         inset: 0;
+         background: rgba(0, 0, 0, 0.55);
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         z-index: 100;
+         padding: 20px;
+         opacity: 1;
+         transition: opacity 0.35s ease;
+     }
+     .welcome-overlay.hidden {
+         opacity: 0;
+         pointer-events: none;
+     }
+     .welcome-card {
+         max-width: 420px;
+         background: #ffffff;
+         color: #222;
+         width: 100%;
+         border-radius: 20px;
+         padding: 40px 32px;
+         text-align: center;
+         border: 1px solid rgba(0,0,0,0.08);
+         box-shadow: 0 18px 50px rgba(0,0,0,0.16);
+     }
+     .welcome-card .icon-wrap {
+         width: 64px;
+         height: 64px;
+         margin: 0 auto 20px;
+         border-radius: 50%;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         font-size: 28px;
+         background: rgba(192, 57, 43, 0.10);
+         color: #c0392b;
+     }
+     .welcome-card h2 {
+         font-size: 1.35rem;
+         font-weight: 700;
+         margin-bottom: 10px;
+         color: #111;
+     }
+     .welcome-card p {
+         font-size: 0.95rem;
+         line-height: 1.5;
+         margin-bottom: 28px;
+         color: #555;
+     }
+     .btn-welcome {
+         display: inline-block;
+         padding: 14px 32px;
+         font-size: 1rem;
+         font-weight: 600;
+         color: #fff;
+         background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
+         border: none;
+         border-radius: 999px;
+         cursor: pointer;
+         transition: transform 0.15s ease, box-shadow 0.15s ease;
+     }
+     .btn-welcome:hover {
+         transform: translateY(-1px);
+         box-shadow: 0 8px 24px rgba(192, 57, 43, 0.25);
+     }
+     
+     /* Form container – centered */
+     .form-container {
+         max-width: 560px;
+         width: 100%;
+         background: #ffffff;
+         color: #222;
+         border-radius: 20px;
+         padding: 28px 32px 32px;
+         border: 1px solid rgba(0,0,0,0.08);
+         box-shadow: 0 18px 50px rgba(0,0,0,0.12);
+     }
+     .form-container.hidden { display: none; }
+     
+     .form-header {
+         text-align: center;
+         margin-bottom: 24px;
+     }
+     .form-header h1 {
+         font-size: 1.25rem;
+         font-weight: 700;
+         color: #111;
+     }
+     .form-header .sub {
+         font-size: 0.85rem;
+         color: #666;
+         margin-top: 4px;
+     }
+     
+     /* Step progress */
+     .steps-bar {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 8px;
+         margin-bottom: 28px;
+     }
+     .step-dot {
+         width: 10px;
+         height: 10px;
+         border-radius: 50%;
+         background: rgba(0,0,0,0.15);
+         transition: background 0.25s ease, transform 0.25s ease;
+     }
+     .step-dot.active {
+         background: #c0392b;
+         transform: scale(1.2);
+     }
+     .step-dot.done {
+         background: rgba(192, 57, 43, 0.55);
+     }
+     .step-line {
+         width: 40px;
+         height: 2px;
+         background: rgba(0,0,0,0.12);
+     }
+     .step-line.done {
+         background: rgba(192, 57, 43, 0.45);
+     }
+     
+     /* Form steps */
+     .form-step { display: none; }
+     .form-step.active {
+         display: block;
+         animation: fadeIn 0.3s ease;
+     }
+     @keyframes fadeIn {
+         from { opacity: 0; transform: translateY(6px); }
+         to { opacity: 1; transform: translateY(0); }
+     }
+     .step-title {
+         font-size: 0.9rem;
+         font-weight: 600;
+         color: #333;
+         margin-bottom: 18px;
+         padding-bottom: 8px;
+         border-bottom: 1px solid #eee;
+     }
+     
+     .form-group { margin-bottom: 14px; }
+     
+     .form-group label {
+         display: block;
+         font-size: 0.8rem;
+         font-weight: 500;
+         color: #333;
+         margin-bottom: 5px;
+     }
+     
+     /* Inputs + select */
+     .form-group input[type="text"],
+     .form-group input[type="email"],
+     .form-group input[type="number"],
+     .form-group input[type="date"],
+     .form-group input[type="password"],
+     .form-group select {
+         width: 100%;
+         padding: 10px 14px;
+         font-size: 0.9rem;
+         border-radius: 10px;
+         border: 1px solid #ddd;
+         background: #ffffff;
+         color: #222;
+     }
+     
+     .form-group input::placeholder { color: #999; }
+     
+     .form-group input:focus,
+     .form-group select:focus {
+         outline: none;
+         border-color: #c0392b;
+         box-shadow: 0 0 0 3px rgba(192,57,43,0.18);
+     }
+     
+     .form-group select option {
+         background: #ffffff;
+         color: #222;
+     }
+     
+     /* Password */
+     .password-wrapper { position: relative; }
+     .password-wrapper input { padding-right: 42px; }
+     
+     .password-toggle {
+         position: absolute;
+         right: 12px;
+         top: 50%;
+         transform: translateY(-50%);
+         cursor: pointer;
+         font-size: 14px;
+         color: rgba(0,0,0,0.45);
+     }
+     .password-toggle:hover { color: #222; }
+     
+     .help {
+         font-size: 0.72rem;
+         color: #777;
+         margin-top: 4px;
+     }
+     .field-error {
+         font-size: 0.75rem;
+         color: #c0392b;
+         margin-top: 4px;
+     }
+     .alert-error {
+         padding: 12px 14px;
+         border-radius: 10px;
+         margin-bottom: 16px;
+         font-size: 0.85rem;
+         background: rgba(192, 57, 43, 0.10);
+         color: #8d1f17;
+         border: 1px solid rgba(192, 57, 43, 0.18);
+     }
+     
+     /* Grids */
+     .grid-2 {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 14px;
+     }
+     .grid-3 {
+         display: grid;
+         grid-template-columns: repeat(3, 1fr);
+         gap: 14px;
+     }
+     @media (max-width: 600px) {
+         .grid-2, .grid-3 { grid-template-columns: 1fr; }
+     }
+     
+     /* Checkbox + radio */
+     .checkbox-row, .radio-row {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 10px 20px;
+         align-items: center;
+         margin-top: 6px;
+     }
+     .checkbox-row label, .radio-row label {
+         font-size: 0.85rem;
+         font-weight: 500;
+         display: inline-flex;
+         gap: 8px;
+         align-items: center;
+         color: #333;
+         cursor: pointer;
+     }
+     
+     .form-group input[type="file"] {
+         padding: 8px;
+         font-size: 0.85rem;
+         border-radius: 10px;
+         border: 1px solid #ddd;
+         background: #fff;
+         color: #222;
+     }
+     .location-detect-wrap { padding: 12px 0; }
+     .btn-location {
+         padding: 10px 18px;
+         font-size: 0.9rem;
+         font-weight: 600;
+         color: #c0392b;
+         background: rgba(192, 57, 43, 0.08);
+         border: 1px solid rgba(192, 57, 43, 0.3);
+         border-radius: 10px;
+         cursor: pointer;
+         transition: background 0.2s, border-color 0.2s;
+     }
+     .btn-location:hover { background: rgba(192, 57, 43, 0.15); border-color: #c0392b; }
+     .btn-location:disabled { opacity: 0.6; cursor: not-allowed; }
+     
+     /* Footer buttons */
+     .form-footer {
+         margin-top: 24px;
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         gap: 12px;
+         flex-wrap: wrap;
+     }
+     
+     .btn-secondary {
+         padding: 10px 20px;
+         font-size: 0.9rem;
+         font-weight: 600;
+         color: #333;
+         background: #f4f4f4;
+         border: 1px solid #ddd;
+         border-radius: 999px;
+         cursor: pointer;
+         transition: background 0.15s ease;
+     }
+     .btn-secondary:hover { background: #ededed; }
+     .btn-secondary.hidden { visibility: hidden; }
+     
+     .btn-primary {
+         padding: 12px 28px;
+         font-size: 0.95rem;
+         font-weight: 600;
+         color: #fff;
+         background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
+         border: none;
+         border-radius: 999px;
+         cursor: pointer;
+         transition: transform 0.15s ease, box-shadow 0.15s ease;
+     }
+     .btn-primary:hover {
+         transform: translateY(-1px);
+         box-shadow: 0 8px 24px rgba(192, 57, 43, 0.22);
+     }
+    </style>
+</head>
+<body>
+
+    <!-- Welcome modal (hidden if form has errors on re-render) -->
+    <div class="welcome-overlay" id="welcomeOverlay"{% if form.errors %} style="display: none;"{% endif %}>
+        <div class="welcome-card">
+            <div class="icon-wrap">🩸</div>
+            <h2>Almost there!</h2>
+            <p>Want to complete the next steps? We only need a few details so we can safely match you with blood requests.</p>
+            <button type="button" class="btn-welcome" id="btnStart">Continue to complete profile</button>
+        </div>
+    </div>
+
+    <!-- 3-step form (centered) -->
+    <div class="form-container{% if not form.errors %} hidden{% endif %}" id="formContainer">
+        <div class="form-header">
+            <h1>Complete your donor profile</h1>
+            <p class="sub">Signed in with Google: <strong>{{ google_email }}</strong></p>
+        </div>
+
+        <div class="steps-bar">
+            <span class="step-dot active" data-step="1"></span>
+            <span class="step-line" data-line="1"></span>
+            <span class="step-dot" data-step="2"></span>
+            <span class="step-line" data-line="2"></span>
+            <span class="step-dot" data-step="3"></span>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="profileForm">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert-error">
+                    {% for err in form.non_field_errors %}
+                        {{ err }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Step 1: Basic info -->
+            <div class="form-step active" data-step="1">
+                <div class="step-title">Step 1 — Basic information</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="{{ form.mobile.id_for_label }}">Mobile *</label>
+                        {{ form.mobile }}
+                        {% if form.mobile.errors %}
+                            <div class="field-error">{{ form.mobile.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.blood_group.id_for_label }}">Blood Group *</label>
+                        {{ form.blood_group }}
+                        {% if form.blood_group.errors %}
+                            <div class="field-error">{{ form.blood_group.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.gender.id_for_label }}">Gender</label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}
+                            <div class="field-error">{{ form.gender.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.date_of_birth.id_for_label }}">Date of Birth</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                            <div class="field-error">{{ form.date_of_birth.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.alternate_mobile.id_for_label }}">Alternate Mobile</label>
+                        {{ form.alternate_mobile }}
+                        {% if form.alternate_mobile.errors %}
+                            <div class="field-error">{{ form.alternate_mobile.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.weight_kg.id_for_label }}">Weight (kg)</label>
+                        {{ form.weight_kg }}
+                        {% if form.weight_kg.errors %}
+                            <div class="field-error">{{ form.weight_kg.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Location & donation -->
+            <div class="form-step" data-step="2">
+                <div class="step-title">Step 2 — Location & donation info</div>
+                {{ form.last_lat }}
+                {{ form.last_lng }}
+                <div class="location-detect-wrap" style="margin-bottom: 18px;">
+                    <p id="locationStatus" class="help" style="margin-bottom: 8px;"></p>
+                    <button type="button" id="btnDetectLocation" class="btn-location">
+                        📍 Detect my location
+                    </button>
+                    <span class="help" style="display: block; margin-top: 6px;">We'll use this to match you with nearby blood requests. You can also enter address manually below.</span>
+                </div>
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label for="{{ form.state.id_for_label }}">State</label>
+                        {{ form.state }}
+                        {% if form.state.errors %}
+                            <div class="field-error">{{ form.state.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.city.id_for_label }}">City</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}
+                            <div class="field-error">{{ form.city.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.pincode.id_for_label }}">Pincode</label>
+                        {{ form.pincode }}
+                        {% if form.pincode.errors %}
+                            <div class="field-error">{{ form.pincode.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label for="{{ form.area.id_for_label }}">Area / Locality</label>
+                    {{ form.area }}
+                    {% if form.area.errors %}
+                        <div class="field-error">{{ form.area.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="grid-2" style="margin-top: 14px;">
+                    <div class="form-group">
+                        <label for="{{ form.donated_before.id_for_label }}">Donated blood before?</label>
+                        {{ form.donated_before }}
+                        {% if form.donated_before.errors %}
+                            <div class="field-error">{{ form.donated_before.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.last_donation_date.id_for_label }}">Last donation date</label>
+                        {{ form.last_donation_date }}
+                        {% if form.last_donation_date.errors %}
+                            <div class="field-error">{{ form.last_donation_date.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Medical conditions?</label>
+                        {{ form.medical_conditions }}
+                        {% if form.medical_conditions.errors %}
+                            <div class="field-error">{{ form.medical_conditions.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Currently healthy?</label>
+                        {{ form.currently_healthy }}
+                        {% if form.currently_healthy.errors %}
+                            <div class="field-error">{{ form.currently_healthy.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Available for emergency donation? *</label>
+                        {{ form.emergency_available }}
+                        {% if form.emergency_available.errors %}
+                            <div class="field-error">{{ form.emergency_available.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.preferred_contact.id_for_label }}">Preferred contact</label>
+                        {{ form.preferred_contact }}
+                        {% if form.preferred_contact.errors %}
+                            <div class="field-error">{{ form.preferred_contact.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.preferred_language.id_for_label }}">Preferred language</label>
+                        {{ form.preferred_language }}
+                        {% if form.preferred_language.errors %}
+                            <div class="field-error">{{ form.preferred_language.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.preferred_contact_time.id_for_label }}">Preferred contact time</label>
+                        {{ form.preferred_contact_time }}
+                        {% if form.preferred_contact_time.errors %}
+                            <div class="field-error">{{ form.preferred_contact_time.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.occupation.id_for_label }}">Occupation</label>
+                        {{ form.occupation }}
+                        {% if form.occupation.errors %}
+                            <div class="field-error">{{ form.occupation.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.profile_photo.id_for_label }}">Profile Photo</label>
+                        {{ form.profile_photo }}
+                        {% if form.profile_photo.errors %}
+                            <div class="field-error">{{ form.profile_photo.errors.0 }}</div>
+                        {% endif %}
+                        <span class="help">Optional. JPG, PNG, etc.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Password & consent -->
+            <div class="form-step" data-step="3">
+                <div class="step-title">Step 3 — Security & consent</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="{{ form.password.id_for_label }}">Password *</label>
+                        <div class="password-wrapper">
+                            {{ form.password }}
+                            <span class="password-toggle" onclick="togglePassword('id_password', this)">👁</span>
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="field-error">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+                        <div class="password-wrapper">
+                            {{ form.confirm_password }}
+                            <span class="password-toggle" onclick="togglePassword('id_confirm_password', this)">👁</span>
+                        </div>
+                        {% if form.confirm_password.errors %}
+                            <div class="field-error">{{ form.confirm_password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.emergency_contact_name.id_for_label }}">Emergency contact name</label>
+                        {{ form.emergency_contact_name }}
+                        {% if form.emergency_contact_name.errors %}
+                            <div class="field-error">{{ form.emergency_contact_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.emergency_contact_number.id_for_label }}">Emergency contact number</label>
+                        {{ form.emergency_contact_number }}
+                        {% if form.emergency_contact_number.errors %}
+                            <div class="field-error">{{ form.emergency_contact_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <div class="checkbox-row">
+                        <label for="{{ form.consent_contact.id_for_label }}">
+                            {{ form.consent_contact }} I agree to be contacted for blood donation requests
+                        </label>
+                    </div>
+                    {% if form.consent_contact.errors %}
+                        <div class="field-error">{{ form.consent_contact.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <div class="checkbox-row">
+                        <label for="{{ form.consent_terms.id_for_label }}">
+                            {{ form.consent_terms }} I accept Terms &amp; Privacy Policy
+                        </label>
+                    </div>
+                    {% if form.consent_terms.errors %}
+                        <div class="field-error">{{ form.consent_terms.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <button type="button" class="btn-secondary" id="btnBack">Back</button>
+                <button type="button" class="btn-primary" id="btnNext">Next</button>
+                <button type="submit" class="btn-primary hidden" id="btnSubmit">Save & go to dashboard</button>
+            </div>
+        </form>
+    </div>
+
+<script>
+(function() {
+    var currentStep = 1;
+    var totalSteps = 3;
+    var welcomeOverlay = document.getElementById('welcomeOverlay');
+    var formContainer = document.getElementById('formContainer');
+    var btnStart = document.getElementById('btnStart');
+    var btnBack = document.getElementById('btnBack');
+    var btnNext = document.getElementById('btnNext');
+    var btnSubmit = document.getElementById('btnSubmit');
+    var form = document.getElementById('profileForm');
+
+    function showStep(step) {
+        currentStep = step;
+        document.querySelectorAll('.form-step').forEach(function(el) {
+            el.classList.toggle('active', parseInt(el.getAttribute('data-step'), 10) === step);
+        });
+        document.querySelectorAll('.step-dot').forEach(function(el) {
+            var n = parseInt(el.getAttribute('data-step'), 10);
+            el.classList.remove('active', 'done');
+            if (n === step) el.classList.add('active');
+            else if (n < step) el.classList.add('done');
+        });
+        document.querySelectorAll('.step-line').forEach(function(el) {
+            var n = parseInt(el.getAttribute('data-line'), 10);
+            el.classList.toggle('done', n < step);
+        });
+        btnBack.classList.toggle('hidden', step === 1);
+        btnNext.classList.toggle('hidden', step === totalSteps);
+        btnSubmit.classList.toggle('hidden', step !== totalSteps);
+    }
+
+    btnStart.addEventListener('click', function() {
+        welcomeOverlay.classList.add('hidden');
+        formContainer.classList.remove('hidden');
+    });
+
+    btnBack.addEventListener('click', function() {
+        if (currentStep > 1) showStep(currentStep - 1);
+    });
+
+    btnNext.addEventListener('click', function() {
+        if (currentStep < totalSteps) showStep(currentStep + 1);
+    });
+
+    // Auto-detect location (Step 2) – saves to donor profile on submit
+    var locationStatus = document.getElementById('locationStatus');
+    var btnDetectLocation = document.getElementById('btnDetectLocation');
+    if (btnDetectLocation) {
+        btnDetectLocation.addEventListener('click', function() {
+            var latInput = document.getElementById('id_last_lat');
+            var lngInput = document.getElementById('id_last_lng');
+            if (!latInput || !lngInput) return;
+            if (!navigator.geolocation) {
+                locationStatus.textContent = 'Location is not supported by your browser. Please enter address manually.';
+                locationStatus.style.color = '#c0392b';
+                return;
+            }
+            locationStatus.textContent = 'Detecting your location…';
+            locationStatus.style.color = '#666';
+            btnDetectLocation.disabled = true;
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var lat = pos.coords.latitude;
+                    var lng = pos.coords.longitude;
+                    latInput.value = lat.toFixed(6);
+                    lngInput.value = lng.toFixed(6);
+                    locationStatus.textContent = 'Coordinates saved. Looking up address…';
+                    btnDetectLocation.disabled = false;
+                    // Reverse geocode via Nominatim (no API key)
+                    fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&addressdetails=1', {
+                        headers: { 'Accept': 'application/json', 'Accept-Language': 'en', 'User-Agent': 'Blood450-DonorProfile/1.0' }
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var addr = data.address || {};
+                        var stateEl = document.getElementById('id_state');
+                        var cityEl = document.getElementById('id_city');
+                        var areaEl = document.getElementById('id_area');
+                        var pincodeEl = document.getElementById('id_pincode');
+                        if (stateEl && (addr.state || addr.county)) stateEl.value = addr.state || addr.county || '';
+                        if (cityEl && (addr.city || addr.town || addr.village || addr.municipality)) cityEl.value = addr.city || addr.town || addr.village || addr.municipality || '';
+                        if (areaEl && (addr.suburb || addr.neighbourhood || addr.locality)) areaEl.value = addr.suburb || addr.neighbourhood || addr.locality || '';
+                        if (pincodeEl && addr.postcode) pincodeEl.value = addr.postcode;
+                        locationStatus.textContent = 'Location detected and saved. You can edit the fields below if needed.';
+                        locationStatus.style.color = '#059669';
+                    })
+                    .catch(function() {
+                        locationStatus.textContent = 'Location coordinates saved. You can enter address manually below.';
+                        locationStatus.style.color = '#059669';
+                    });
+                },
+                function() {
+                    locationStatus.textContent = 'Could not get location. Please allow location access or enter address manually.';
+                    locationStatus.style.color = '#c0392b';
+                    btnDetectLocation.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+            );
+        });
+    }
+
+    showStep(1);
+})();
+
+function togglePassword(id, el) {
+    var input = document.getElementById(id);
+    if (input.type === 'password') {
+        input.type = 'text';
+        el.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        el.textContent = '👁';
+    }
+}
+</script>
+</body>
+</html>
