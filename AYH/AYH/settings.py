@@ -88,9 +88,14 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 _default_base = "http://localhost:8000"
 if os.environ.get("VERCEL"):
-    vercel_url = os.environ.get("VERCEL_URL", "").strip()
-    if vercel_url:
-        _default_base = f"https://{vercel_url.rstrip('/')}"
+    # Prefer stable production host. VERCEL_URL changes per deploy and causes
+    # Google redirect_uri_mismatch / DEPLOYMENT_NOT_FOUND.
+    _prod_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip().rstrip("/")
+    _deploy_host = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+    if _prod_host:
+        _default_base = f"https://{_prod_host}"
+    elif _deploy_host:
+        _default_base = f"https://{_deploy_host}"
 
 APP_BASE_URL = config("APP_BASE_URL", default=_default_base).rstrip("/")
 
@@ -104,10 +109,14 @@ GOOGLE_OAUTH_CLIENT_SECRET = config("GOOGLE_OAUTH_CLIENT_SECRET", default=None)
 GOOGLE_OAUTH_ANDROID_CLIENT_ID = config("GOOGLE_OAUTH_ANDROID_CLIENT_ID", default=None)
 GOOGLE_OAUTH_IOS_CLIENT_ID = config("GOOGLE_OAUTH_IOS_CLIENT_ID", default=None)
 
-GOOGLE_REDIRECT_URI = config(
-    "GOOGLE_REDIRECT_URI",
-    default=f"{APP_BASE_URL}/register/google/callback/",
-)
+_raw_google_redirect = config("GOOGLE_REDIRECT_URI", default="").strip()
+if _raw_google_redirect:
+    GOOGLE_REDIRECT_URI = _raw_google_redirect
+else:
+    GOOGLE_REDIRECT_URI = f"{APP_BASE_URL}/register/google/callback/"
+# Google requires an exact match, including trailing slash.
+if GOOGLE_REDIRECT_URI and not GOOGLE_REDIRECT_URI.endswith("/"):
+    GOOGLE_REDIRECT_URI = f"{GOOGLE_REDIRECT_URI}/"
 
 # ==============================================================================
 # APPLICATIONS

@@ -1361,10 +1361,36 @@ def _is_profile_complete(user):
     return bool(donor_profile.phone and donor_profile.blood_group)
 
 
+def _google_oauth_redirect_uri(request):
+    """
+    Stable OAuth callback URL for Google.
+
+    Prefer explicit settings (APP_BASE_URL / GOOGLE_REDIRECT_URI) so Vercel
+    preview/deployment hosts do not cause redirect_uri_mismatch.
+    """
+    configured = (getattr(django_settings, "GOOGLE_REDIRECT_URI", None) or "").strip()
+    if configured.startswith(("http://", "https://")):
+        return configured if configured.endswith("/") else f"{configured}/"
+
+    base = (getattr(django_settings, "APP_BASE_URL", None) or "").strip().rstrip("/")
+    if base.startswith(("http://", "https://")) and "localhost" not in base:
+        return f"{base}/register/google/callback/"
+
+    uri = request.build_absolute_uri("/register/google/callback/")
+    if uri.startswith("http://") and (
+        os.environ.get("VERCEL")
+        or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
+    ):
+        uri = "https://" + uri[len("http://") :]
+    if not uri.endswith("/"):
+        uri = f"{uri}/"
+    return uri
+
+
 def google_login(request):
     try:
         client_id = getattr(django_settings, "GOOGLE_OAUTH_CLIENT_ID", None)
-        redirect_uri = getattr(django_settings, "GOOGLE_REDIRECT_URI", None)
+        redirect_uri = _google_oauth_redirect_uri(request)
 
         logger.info(
             "Google login config: client_id=%s redirect_uri=%s",
@@ -1381,6 +1407,8 @@ def google_login(request):
 
         state = get_random_string(32)
         request.session["google_oauth_state"] = state
+        # Must match token exchange on callback (same host).
+        request.session["google_oauth_redirect_uri"] = redirect_uri
         request.session.modified = True
         request.session.save()
 
@@ -1412,23 +1440,20 @@ def google_callback(request):
 
         if not state or state != request.session.get("google_oauth_state"):
             messages.error(request, "Invalid or expired Google sign-in. Please try again.")
-            return redirect("donor_register")
+            return redirect("login")
 
         request.session.pop("google_oauth_state", None)
 
         if not code:
             messages.error(request, "Google sign-in was cancelled or failed.")
-            return redirect("donor_register")
+            return redirect("login")
 
         client_id = getattr(django_settings, "GOOGLE_OAUTH_CLIENT_ID", None)
         client_secret = getattr(django_settings, "GOOGLE_OAUTH_CLIENT_SECRET", None)
-        redirect_uri = getattr(django_settings, "GOOGLE_REDIRECT_URI", None)
-                # ✅ ADD THIS DEBUG BLOCK HERE
-        logger.info(
-            "OAUTH DEBUG client_id=%s secret_len=%s redirect_uri=%s",
-            client_id,
-            len(client_secret) if client_secret else None,
-            redirect_uri,
+        # Must be identical to the redirect_uri used in google_login.
+        redirect_uri = (
+            request.session.pop("google_oauth_redirect_uri", None)
+            or _google_oauth_redirect_uri(request)
         )
 
         logger.info(
@@ -1440,7 +1465,7 @@ def google_callback(request):
 
         if not client_id or not client_secret or not redirect_uri:
             messages.error(request, "Google Sign-In is not configured.")
-            return redirect("donor_register")
+            return redirect("login")
 
         token_resp = requests.post(
             GOOGLE_TOKEN_URL,
