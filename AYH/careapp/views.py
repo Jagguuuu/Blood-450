@@ -1363,11 +1363,17 @@ def _is_profile_complete(user):
 
 def _google_oauth_redirect_uri(request):
     """
-    Stable OAuth callback URL for Google.
+    OAuth callback must match the host the user is actually visiting.
 
-    Prefer explicit settings (APP_BASE_URL / GOOGLE_REDIRECT_URI) so Vercel
-    preview/deployment hosts do not cause redirect_uri_mismatch.
+    Using a stale APP_BASE_URL / GOOGLE_REDIRECT_URI (old Vercel deploy URL)
+    causes Google to redirect to a dead host → DEPLOYMENT_NOT_FOUND.
     """
+    host = (request.get_host() or "").split(":")[0].strip().lower()
+    on_vercel = bool(os.environ.get("VERCEL")) or host.endswith(".vercel.app")
+
+    if host and on_vercel:
+        return f"https://{host}/register/google/callback/"
+
     configured = (getattr(django_settings, "GOOGLE_REDIRECT_URI", None) or "").strip()
     if configured.startswith(("http://", "https://")):
         return configured if configured.endswith("/") else f"{configured}/"
@@ -1378,8 +1384,7 @@ def _google_oauth_redirect_uri(request):
 
     uri = request.build_absolute_uri("/register/google/callback/")
     if uri.startswith("http://") and (
-        os.environ.get("VERCEL")
-        or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
+        on_vercel or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
     ):
         uri = "https://" + uri[len("http://") :]
     if not uri.endswith("/"):
