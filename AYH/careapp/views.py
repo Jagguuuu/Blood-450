@@ -1368,16 +1368,21 @@ def google_login(request):
 
         logger.info(
             "Google login config: client_id=%s redirect_uri=%s",
-            client_id,
+            bool(client_id),
             redirect_uri,
         )
 
         if not client_id or not redirect_uri:
-            messages.error(request, "Google Sign-In is not configured.")
+            try:
+                messages.error(request, "Google Sign-In is not configured.")
+            except Exception:
+                pass
             return redirect("login")
 
         state = get_random_string(32)
         request.session["google_oauth_state"] = state
+        request.session.modified = True
+        request.session.save()
 
         params = {
             "client_id": client_id,
@@ -1393,8 +1398,11 @@ def google_login(request):
 
     except Exception as e:
         logger.exception("Google login redirect failed: %s", e)
-        messages.error(request, "Google Sign-In could not start. Please try again.")
-        return redirect("donor_register")
+        try:
+            messages.error(request, "Google Sign-In could not start. Please try again.")
+        except Exception:
+            pass
+        return redirect("login")
 
 
 def google_callback(request):

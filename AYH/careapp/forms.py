@@ -24,6 +24,12 @@ class DonorLoginForm(AuthenticationForm):
             return user.username
         except User.DoesNotExist:
             pass
+        except User.MultipleObjectsReturned:
+            user = User.objects.filter(username__iexact=value).order_by('id').first()
+            return user.username
+        except Exception:
+            # DB connectivity issues should surface as a form error, not a 500.
+            return value.lower()
         # Google OAuth users have username derived from email (e.g. john_doe), not the full email.
         # Allow login with email so they can use their Google email + password.
         try:
@@ -31,6 +37,11 @@ class DonorLoginForm(AuthenticationForm):
             return user.username
         except User.DoesNotExist:
             pass
+        except User.MultipleObjectsReturned:
+            user = User.objects.filter(email__iexact=value).order_by('id').first()
+            return user.username
+        except Exception:
+            return value.lower()
         return value.lower()
     
     def clean(self):
@@ -45,14 +56,20 @@ class DonorLoginForm(AuthenticationForm):
             return self.cleaned_data
         
         if password:
-            # clean_username() already found the user case-insensitively
-            # and returned the actual username from database
-            # Now authenticate with that username
-            user = authenticate(
-                request=self.request,
-                username=username,
-                password=password
-            )
+            try:
+                # clean_username() already found the user case-insensitively
+                # and returned the actual username from database
+                # Now authenticate with that username
+                user = authenticate(
+                    request=self.request,
+                    username=username,
+                    password=password
+                )
+            except Exception:
+                raise ValidationError(
+                    _("Login is temporarily unavailable. Please check the database connection and try again."),
+                    code='database_error',
+                )
             
             if user is None:
                 # Raise ValidationError for invalid login

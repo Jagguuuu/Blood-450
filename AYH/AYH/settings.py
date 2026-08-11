@@ -175,17 +175,22 @@ ASGI_APPLICATION = "AYH.asgi.application"
 import dj_database_url
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
+# Vercel serverless: never keep persistent DB connections.
+_DB_CONN_MAX_AGE = 0 if os.environ.get("VERCEL") else 600
 
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
-            conn_max_age=600,
+            conn_max_age=_DB_CONN_MAX_AGE,
             conn_health_checks=True,
         )
     }
     DATABASES["default"].setdefault("OPTIONS", {})
     DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
+    # Required for Supabase/Neon transaction poolers (PgBouncer) on serverless.
+    if os.environ.get("VERCEL") or ":6543" in DATABASE_URL:
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
     DATABASES = {
         "default": {
@@ -251,9 +256,15 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 # SESSIONS / COOKIES / CSRF
 # ==============================================================================
 
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+# DB sessions break easily on Vercel (serverless + pooler). Use signed cookies there.
+if os.environ.get("VERCEL"):
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+    SESSION_SAVE_EVERY_REQUEST = False
+else:
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+    SESSION_SAVE_EVERY_REQUEST = True
+
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 365
-SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 SESSION_COOKIE_SECURE = IS_PRODUCTION
@@ -268,12 +279,20 @@ CSRF_COOKIE_AGE = 31449600
 CSRF_COOKIE_DOMAIN = None
 CSRF_COOKIE_PATH = "/"
 
-CSRF_TRUSTED_ORIGINS = [
+_csrf_origins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "https://*.vercel.app",
-    APP_BASE_URL,
 ]
+if APP_BASE_URL and APP_BASE_URL.startswith(("http://", "https://")):
+    _csrf_origins.append(APP_BASE_URL)
+# Always trust the current Vercel deployment host when present.
+if os.environ.get("VERCEL"):
+    _vercel_host = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+    if _vercel_host:
+        _csrf_origins.append(f"https://{_vercel_host}")
+
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(_csrf_origins))
 
 CSRF_FAILURE_VIEW = "django.views.csrf.csrf_failure"
 
