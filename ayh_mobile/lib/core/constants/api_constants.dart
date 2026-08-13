@@ -10,7 +10,7 @@ class ApiConstants {
 
   /// Default production host used for release APK builds when API_BASE_URL is omitted.
   static const String _defaultVercelApiBaseUrl =
-      'https://blood-450-gqkc.vercel.app/api/';
+      'https://blood-450-inky.vercel.app/api/';
 
   /// Physical device on Wi‑Fi: `flutter run --dart-define=API_HOST=192.168.1.10`
   static const String _apiHostFromEnv =

@@ -192,18 +192,20 @@ ASGI_APPLICATION = "AYH.asgi.application"
 
 import dj_database_url
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip().strip("'").strip('"')
 # Vercel serverless: never keep persistent DB connections.
 _DB_CONN_MAX_AGE = 0 if os.environ.get("VERCEL") else 600
 
 if DATABASE_URL:
+    # Older dj-database-url builds reject conn_health_checks= on parse() and
+    # crash the whole Vercel function at import time (FUNCTION_INVOCATION_FAILED).
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=_DB_CONN_MAX_AGE,
-            conn_health_checks=True,
         )
     }
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
     DATABASES["default"].setdefault("OPTIONS", {})
     DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
     # Required for Supabase/Neon transaction poolers (PgBouncer) on serverless.
