@@ -3,6 +3,15 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 class ApiConstants {
+  /// Production Django API on Vercel.
+  /// Override: `--dart-define=API_BASE_URL=https://your-app.vercel.app/api/`
+  static const String _apiBaseUrlFromEnv =
+      String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
+  /// Default production host used for release APK builds when API_BASE_URL is omitted.
+  static const String _defaultVercelApiBaseUrl =
+      'https://blood-450-gqkc.vercel.app/api/';
+
   /// Physical device on Wi‑Fi: `flutter run --dart-define=API_HOST=192.168.1.10`
   static const String _apiHostFromEnv =
       String.fromEnvironment('API_HOST', defaultValue: '');
@@ -14,12 +23,32 @@ class ApiConstants {
   static String? _cachedBaseUrl;
 
   /// Android emulator → host PC localhost. iOS sim / desktop → 127.0.0.1.
+  /// Release / explicit API_BASE_URL → Vercel.
   static String get baseUrl => _cachedBaseUrl ?? _defaultBaseUrl();
 
+  static String _normalizeApiBase(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return trimmed;
+    return trimmed.endsWith('/') ? trimmed : '$trimmed/';
+  }
+
   static String _defaultBaseUrl() {
+    final fromEnv = _apiBaseUrlFromEnv.trim();
+    if (fromEnv.isNotEmpty) {
+      return _normalizeApiBase(fromEnv);
+    }
+
+    // Release APK always talks to Vercel unless API_BASE_URL/API_HOST overrides.
+    if (kReleaseMode) {
+      return _defaultVercelApiBaseUrl;
+    }
+
     final envHost = _apiHostFromEnv.trim();
     final envPort = _apiPortFromEnv.trim().isEmpty ? '8000' : _apiPortFromEnv.trim();
     if (envHost.isNotEmpty) {
+      if (envHost.startsWith('http://') || envHost.startsWith('https://')) {
+        return _normalizeApiBase('$envHost/api');
+      }
       return 'http://$envHost:$envPort/api/';
     }
 
@@ -82,9 +111,24 @@ class ApiConstants {
       }
     }
 
+    final apiBase = _apiBaseUrlFromEnv.trim();
+    if (apiBase.isNotEmpty) {
+      add(_normalizeApiBase(apiBase));
+      return seen.toList();
+    }
+
+    if (kReleaseMode) {
+      add(_defaultVercelApiBaseUrl);
+      return seen.toList();
+    }
+
     final envHost = _apiHostFromEnv.trim();
     if (envHost.isNotEmpty) {
-      add('http://$envHost:$envPort/api/');
+      if (envHost.startsWith('http://') || envHost.startsWith('https://')) {
+        add(_normalizeApiBase('$envHost/api'));
+      } else {
+        add('http://$envHost:$envPort/api/');
+      }
       return seen.toList();
     }
 
