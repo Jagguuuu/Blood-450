@@ -1361,35 +1361,96 @@ def _is_profile_complete(user):
     return bool(donor_profile.phone and donor_profile.blood_group)
 
 
-def _google_oauth_redirect_uri(request):
-    """
-    OAuth callback must match the host the user is actually visiting.
-
-    Using a stale APP_BASE_URL / GOOGLE_REDIRECT_URI (old Vercel deploy URL)
-    causes Google to redirect to a dead host → DEPLOYMENT_NOT_FOUND.
-    """
-    host = (request.get_host() or "").split(":")[0].strip().lower()
-    on_vercel = bool(os.environ.get("VERCEL")) or host.endswith(".vercel.app")
-
-    if host and on_vercel:
-        return f"https://{host}/register/google/callback/"
-
-    configured = (getattr(django_settings, "GOOGLE_REDIRECT_URI", None) or "").strip()
-    if configured.startswith(("http://", "https://")):
-        return configured if configured.endswith("/") else f"{configured}/"
-
-    base = (getattr(django_settings, "APP_BASE_URL", None) or "").strip().rstrip("/")
-    if base.startswith(("http://", "https://")) and "localhost" not in base:
-        return f"{base}/register/google/callback/"
-
-    uri = request.build_absolute_uri("/register/google/callback/")
-    if uri.startswith("http://") and (
-        on_vercel or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
-    ):
-        uri = "https://" + uri[len("http://") :]
+def _normalize_redirect_uri(uri):
+    uri = (uri or "").strip()
+    if not uri:
+        return ""
     if not uri.endswith("/"):
         uri = f"{uri}/"
     return uri
+
+
+def _is_dead_or_stale_vercel_host(url_or_host):
+    """Reject known-dead / mismatched hosts that cause DEPLOYMENT_NOT_FOUND."""
+    value = (url_or_host or "").strip().lower()
+    # Hardcoded old alias that no longer has a production deployment.
+    return "blood-450-81maqy.vercel.app" in value
+
+
+def _google_oauth_redirect_uri(request=None):
+    """
+    Build Google OAuth callback from the LIVE host the user is on.
+
+    Important: never send Google back to a deleted Vercel alias
+    (that shows DEPLOYMENT_NOT_FOUND after account selection).
+    """
+    # 1) Prefer the browser host the user actually opened (always live).
+    if request is not None:
+        host = (request.get_host() or "").split(":")[0].strip().lower()
+        if host and not _is_dead_or_stale_vercel_host(host):
+            if os.environ.get("VERCEL") or host.endswith(".vercel.app"):
+                return f"https://{host}/register/google/callback/"
+            scheme = "https" if request.is_secure() else request.scheme
+            if request.META.get("HTTP_X_FORWARDED_PROTO") == "https":
+                scheme = "https"
+            return f"{scheme}://{host}/register/google/callback/"
+
+    # 2) Env only if it is not the dead alias.
+    configured = _normalize_redirect_uri(
+        getattr(django_settings, "GOOGLE_REDIRECT_URI", None)
+    )
+    if (
+        configured.startswith(("http://", "https://"))
+        and not _is_dead_or_stale_vercel_host(configured)
+    ):
+        return configured
+
+    base = (getattr(django_settings, "APP_BASE_URL", None) or "").strip().rstrip("/")
+    if (
+        base.startswith(("http://", "https://"))
+        and "localhost" not in base
+        and not _is_dead_or_stale_vercel_host(base)
+    ):
+        return f"{base}/register/google/callback/"
+
+    if request is not None:
+        uri = request.build_absolute_uri("/register/google/callback/")
+        if uri.startswith("http://") and (
+            os.environ.get("VERCEL")
+            or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
+        ):
+            uri = "https://" + uri[len("http://") :]
+        return _normalize_redirect_uri(uri)
+
+    return ""
+
+
+def google_oauth_debug(request):
+    """Public helper: shows the exact redirect_uri this app sends to Google."""
+    from django.http import JsonResponse
+
+    redirect_uri = _google_oauth_redirect_uri(request)
+    host = (request.get_host() or "").split(":")[0]
+    return JsonResponse(
+        {
+            "redirect_uri": redirect_uri,
+            "request_host": host,
+            "app_base_url": getattr(django_settings, "APP_BASE_URL", None),
+            "client_id_configured": bool(
+                getattr(django_settings, "GOOGLE_OAUTH_CLIENT_ID", None)
+            ),
+            "google_console_must_contain_exactly": redirect_uri,
+            "authorized_javascript_origin": f"https://{host}" if host else None,
+            "warning": (
+                "blood-450-81maqy.vercel.app has no deployment; do not use it."
+                if _is_dead_or_stale_vercel_host(
+                    getattr(django_settings, "APP_BASE_URL", "")
+                )
+                or _is_dead_or_stale_vercel_host(host)
+                else None
+            ),
+        }
+    )
 
 
 def google_login(request):
@@ -1412,7 +1473,7 @@ def google_login(request):
 
         state = get_random_string(32)
         request.session["google_oauth_state"] = state
-        # Must match token exchange on callback (same host).
+        # Must match token exchange on callback exactly.
         request.session["google_oauth_redirect_uri"] = redirect_uri
         request.session.modified = True
         request.session.save()
@@ -1563,6 +1624,7 @@ def google_callback(request):
 
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
 
+        # New / incomplete Google users finish profile first, then donor dashboard.
         if _is_profile_complete(user):
             return redirect("donor_notifications")
         return redirect("google_complete_profile")
@@ -1570,7 +1632,7 @@ def google_callback(request):
     except Exception as e:
         logger.exception("Google callback crashed: %s", e)
         messages.error(request, f"Google callback crashed: {str(e)}")
-        return redirect("donor_register")
+        return redirect("login")
 
 
 @login_required

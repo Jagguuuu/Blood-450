@@ -9,6 +9,7 @@ urlpatterns = [
     path('register/', views.donor_register, name='donor_register'),
     path('register/google/', views.google_login, name='google_login'),
     path('register/google/callback/', views.google_callback, name='google_callback'),
+    path('register/google/debug/', views.google_oauth_debug, name='google_oauth_debug'),
     path('register/google/complete-profile/', views.google_complete_profile, name='google_complete_profile'),
     path('register/verify-otp/', views.donor_verify_otp, name='donor_verify_otp'),
     path('register/resend-otp/', views.donor_resend_otp, name='donor_resend_otp'),

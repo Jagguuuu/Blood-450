@@ -88,8 +88,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 _default_base = "http://localhost:8000"
 if os.environ.get("VERCEL"):
-    # Prefer stable production host. VERCEL_URL changes per deploy and causes
-    # Google redirect_uri_mismatch / DEPLOYMENT_NOT_FOUND.
+    # Prefer stable production domain from Vercel; else current deployment host.
+    # Never hardcode an old alias (e.g. blood-450-81maqy) — deleted aliases
+    # return DEPLOYMENT_NOT_FOUND after Google redirects back.
     _prod_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip().rstrip("/")
     _deploy_host = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
     if _prod_host:
@@ -98,6 +99,14 @@ if os.environ.get("VERCEL"):
         _default_base = f"https://{_deploy_host}"
 
 APP_BASE_URL = config("APP_BASE_URL", default=_default_base).rstrip("/")
+# Ignore deleted/stale alias if someone left it in env.
+if "blood-450-81maqy.vercel.app" in (APP_BASE_URL or ""):
+    if os.environ.get("VERCEL"):
+        _prod_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip().rstrip("/")
+        _deploy_host = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+        APP_BASE_URL = f"https://{_prod_host or _deploy_host}".rstrip("/")
+    else:
+        APP_BASE_URL = "http://localhost:8000"
 
 # ------------------------------------------------------------------------------
 # GOOGLE OAUTH SETTINGS
@@ -110,7 +119,7 @@ GOOGLE_OAUTH_ANDROID_CLIENT_ID = config("GOOGLE_OAUTH_ANDROID_CLIENT_ID", defaul
 GOOGLE_OAUTH_IOS_CLIENT_ID = config("GOOGLE_OAUTH_IOS_CLIENT_ID", default=None)
 
 _raw_google_redirect = config("GOOGLE_REDIRECT_URI", default="").strip()
-if _raw_google_redirect:
+if _raw_google_redirect and "blood-450-81maqy.vercel.app" not in _raw_google_redirect:
     GOOGLE_REDIRECT_URI = _raw_google_redirect
 else:
     GOOGLE_REDIRECT_URI = f"{APP_BASE_URL}/register/google/callback/"
