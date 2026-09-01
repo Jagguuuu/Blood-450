@@ -191,6 +191,7 @@ class ApiConstants {
 
   static const String respond = 'respond/';
   static const String dashboard = 'dashboard/';
+  static const String leaderboard = 'leaderboard/';
 
   static const String whatsappUnread = 'whatsapp/unread/';
   static const String whatsappConversations = 'whatsapp/conversations/';

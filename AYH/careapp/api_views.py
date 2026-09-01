@@ -40,9 +40,11 @@ from .serializers import (
     DonorResponseSerializer,
     DonorResponseCreateSerializer,
     DashboardStatsSerializer,
+    LeaderboardResponseSerializer,
 )
 from .views import get_compatible_blood_groups  # Import blood compatibility logic
 from .throttling import PasswordResetRateThrottle
+from .leaderboard_service import build_leaderboard_payload
 
 
 # ==============================================================================
@@ -854,3 +856,20 @@ def admin_dashboard(request):
     }
     
     return Response(data)
+
+
+# ==============================================================================
+# LEADERBOARD
+# ==============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def donor_leaderboard(request):
+    """
+    Donor leaderboard — top 10 by accepted donations plus current user stats.
+
+    GET /api/leaderboard/
+    """
+    payload = build_leaderboard_payload(request.user)
+    serializer = LeaderboardResponseSerializer(payload)
+    return Response(serializer.data, status=status.HTTP_200_OK)

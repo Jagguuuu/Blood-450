@@ -42,6 +42,11 @@ urlpatterns = [
     path('dashboard/', api_views.admin_dashboard, name='api-dashboard'),
 
     # ==============================================================================
+    # LEADERBOARD
+    # ==============================================================================
+    path('leaderboard/', api_views.donor_leaderboard, name='api-leaderboard'),
+
+    # ==============================================================================
     # WHATSAPP CHAT & MESSAGING
     # ==============================================================================
     path('whatsapp/webhook/', whatsapp_webhook.whatsapp_webhook, name='api-whatsapp-webhook'),

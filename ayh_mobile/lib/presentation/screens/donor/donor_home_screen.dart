@@ -10,6 +10,7 @@ import '../auth/login_screen.dart';
 import 'donor_my_responses_screen.dart';
 import 'donor_profile_screen.dart';
 import 'donor_notifications_screen.dart';
+import 'leaderboard_screen.dart';
 import '../support/support_chat_screen.dart';
 import '../../providers/whatsapp_chat_provider.dart';
 import '../../../data/models/notification.dart';
@@ -2536,6 +2537,20 @@ class _DonorHomeScreenState extends State<DonorHomeScreen>
                   context,
                   MaterialPageRoute(
                     builder: (_) => const DonorNotificationsScreen(),
+                  ),
+                );
+              },
+            ),
+            _drawerTile(
+              icon: Icons.emoji_events_rounded,
+              title: 'Leaderboard',
+              subtitle: 'Top donors & rewards',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LeaderboardScreen(),
                   ),
                 );
               },

@@ -481,3 +481,24 @@ class DashboardStatsSerializer(serializers.Serializer):
     total_accepted = serializers.IntegerField()
     critical_requests = serializers.IntegerField()
     recent_requests = BloodRequestSerializer(many=True)
+
+
+# ==============================================================================
+# LEADERBOARD SERIALIZERS
+# ==============================================================================
+
+class LeaderboardDonorSerializer(serializers.Serializer):
+    rank = serializers.IntegerField()
+    name = serializers.CharField()
+    blood_group = serializers.CharField()
+    donations = serializers.IntegerField()
+    badge = serializers.CharField()
+
+
+class LeaderboardCurrentUserSerializer(LeaderboardDonorSerializer):
+    lives_impacted = serializers.IntegerField()
+
+
+class LeaderboardResponseSerializer(serializers.Serializer):
+    top_donors = LeaderboardDonorSerializer(many=True)
+    current_user = LeaderboardCurrentUserSerializer(allow_null=True)

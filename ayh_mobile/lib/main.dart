@@ -6,6 +6,7 @@ import 'presentation/providers/blood_request_provider.dart';
 import 'presentation/providers/notification_provider.dart';
 import 'presentation/providers/dashboard_provider.dart';
 import 'presentation/providers/whatsapp_chat_provider.dart';
+import 'presentation/providers/leaderboard_provider.dart';
 import 'presentation/screens/splash/splash_screen.dart';
 import 'data/services/storage_service.dart';
 import 'core/api/api_client.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => WhatsAppChatProvider()),
+        ChangeNotifierProvider(create: (_) => LeaderboardProvider()),
       ],
       child: MaterialApp(
         title: 'Blood450',

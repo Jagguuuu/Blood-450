@@ -1377,23 +1377,38 @@ def _is_dead_or_stale_vercel_host(url_or_host):
     return "blood-450-81maqy.vercel.app" in value
 
 
+def _request_hostname(host):
+    """Hostname without port. Supports localhost:8000 and [::1]:8000."""
+    host = (host or "").strip().lower()
+    if host.startswith("["):
+        end = host.find("]")
+        return host[1:end] if end != -1 else host
+    return host.split(":")[0]
+
+
 def _google_oauth_redirect_uri(request=None):
     """
     Build Google OAuth callback from the LIVE host the user is on.
 
-    Important: never send Google back to a deleted Vercel alias
-    (that shows DEPLOYMENT_NOT_FOUND after account selection).
+    Google requires an exact match including scheme, host, port, and trailing slash.
+    Do not strip :8000 from localhost / 127.0.0.1 — that causes redirect_uri_mismatch
+    (and used to surface in the UI as a failed Google sign-in).
     """
     # 1) Prefer the browser host the user actually opened (always live).
     if request is not None:
-        host = (request.get_host() or "").split(":")[0].strip().lower()
+        host = (request.get_host() or "").strip().lower()
+        hostname = _request_hostname(host)
         if host and not _is_dead_or_stale_vercel_host(host):
-            if os.environ.get("VERCEL") or host.endswith(".vercel.app"):
-                return f"https://{host}/register/google/callback/"
-            scheme = "https" if request.is_secure() else request.scheme
-            if request.META.get("HTTP_X_FORWARDED_PROTO") == "https":
-                scheme = "https"
-            return f"{scheme}://{host}/register/google/callback/"
+            uri = request.build_absolute_uri("/register/google/callback/")
+            force_https = bool(
+                os.environ.get("VERCEL")
+                or hostname.endswith(".vercel.app")
+                or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
+                or request.is_secure()
+            )
+            if force_https and uri.startswith("http://"):
+                uri = "https://" + uri[len("http://") :]
+            return _normalize_redirect_uri(uri)
 
     # 2) Env only if it is not the dead alias.
     configured = _normalize_redirect_uri(
@@ -1430,7 +1445,15 @@ def google_oauth_debug(request):
     from django.http import JsonResponse
 
     redirect_uri = _google_oauth_redirect_uri(request)
-    host = (request.get_host() or "").split(":")[0]
+    host = request.get_host() or ""
+    hostname = _request_hostname(host)
+    scheme = "https" if (
+        request.is_secure()
+        or os.environ.get("VERCEL")
+        or hostname.endswith(".vercel.app")
+        or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
+    ) else (request.scheme or "http")
+    origin = f"{scheme}://{host}" if host else None
     return JsonResponse(
         {
             "redirect_uri": redirect_uri,
@@ -1439,8 +1462,11 @@ def google_oauth_debug(request):
             "client_id_configured": bool(
                 getattr(django_settings, "GOOGLE_OAUTH_CLIENT_ID", None)
             ),
+            "client_secret_configured": bool(
+                getattr(django_settings, "GOOGLE_OAUTH_CLIENT_SECRET", None)
+            ),
             "google_console_must_contain_exactly": redirect_uri,
-            "authorized_javascript_origin": f"https://{host}" if host else None,
+            "authorized_javascript_origin": origin,
             "warning": (
                 "blood-450-81maqy.vercel.app has no deployment; do not use it."
                 if _is_dead_or_stale_vercel_host(
