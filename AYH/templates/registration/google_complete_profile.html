@@ -4,354 +4,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Profile - Blood450</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <title>Complete Profile - Blood 450</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* =========================
-        LIGHT THEME (ALL) - DROP IN
-        ========================= */
-     
-     /* Base */
-     * { margin: 0; padding: 0; box-sizing: border-box; }
-     
-     html, body {
-         height: 100%;
-         background: #ffffff;
-     }
-     
-     body {
-         font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-         background-color: #ffffff;
-         font-size: 15px;
-         min-height: 100vh;
-         color: #222;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         padding: 24px;
-         margin: 0;
-     }
-     
-     /* Welcome modal */
-     .welcome-overlay {
-         position: fixed;
-         inset: 0;
-         background: rgba(0, 0, 0, 0.55);
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         z-index: 100;
-         padding: 20px;
-         opacity: 1;
-         transition: opacity 0.35s ease;
-     }
-     .welcome-overlay.hidden {
-         opacity: 0;
-         pointer-events: none;
-     }
-     .welcome-card {
-         max-width: 420px;
-         background: #ffffff;
-         color: #222;
-         width: 100%;
-         border-radius: 20px;
-         padding: 40px 32px;
-         text-align: center;
-         border: 1px solid rgba(0,0,0,0.08);
-         box-shadow: 0 18px 50px rgba(0,0,0,0.16);
-     }
-     .welcome-card .icon-wrap {
-         width: 64px;
-         height: 64px;
-         margin: 0 auto 20px;
-         border-radius: 50%;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         font-size: 28px;
-         background: rgba(192, 57, 43, 0.10);
-         color: #c0392b;
-     }
-     .welcome-card h2 {
-         font-size: 1.35rem;
-         font-weight: 700;
-         margin-bottom: 10px;
-         color: #111;
-     }
-     .welcome-card p {
-         font-size: 0.95rem;
-         line-height: 1.5;
-         margin-bottom: 28px;
-         color: #555;
-     }
-     .btn-welcome {
-         display: inline-block;
-         padding: 14px 32px;
-         font-size: 1rem;
-         font-weight: 600;
-         color: #fff;
-         background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
-         border: none;
-         border-radius: 999px;
-         cursor: pointer;
-         transition: transform 0.15s ease, box-shadow 0.15s ease;
-     }
-     .btn-welcome:hover {
-         transform: translateY(-1px);
-         box-shadow: 0 8px 24px rgba(192, 57, 43, 0.25);
-     }
-     
-     /* Form container – centered */
-     .form-container {
-         max-width: 560px;
-         width: 100%;
-         background: #ffffff;
-         color: #222;
-         border-radius: 20px;
-         padding: 28px 32px 32px;
-         border: 1px solid rgba(0,0,0,0.08);
-         box-shadow: 0 18px 50px rgba(0,0,0,0.12);
-     }
-     .form-container.hidden { display: none; }
-     
-     .form-header {
-         text-align: center;
-         margin-bottom: 24px;
-     }
-     .form-header h1 {
-         font-size: 1.25rem;
-         font-weight: 700;
-         color: #111;
-     }
-     .form-header .sub {
-         font-size: 0.85rem;
-         color: #666;
-         margin-top: 4px;
-     }
-     
-     /* Step progress */
-     .steps-bar {
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         gap: 8px;
-         margin-bottom: 28px;
-     }
-     .step-dot {
-         width: 10px;
-         height: 10px;
-         border-radius: 50%;
-         background: rgba(0,0,0,0.15);
-         transition: background 0.25s ease, transform 0.25s ease;
-     }
-     .step-dot.active {
-         background: #c0392b;
-         transform: scale(1.2);
-     }
-     .step-dot.done {
-         background: rgba(192, 57, 43, 0.55);
-     }
-     .step-line {
-         width: 40px;
-         height: 2px;
-         background: rgba(0,0,0,0.12);
-     }
-     .step-line.done {
-         background: rgba(192, 57, 43, 0.45);
-     }
-     
-     /* Form steps */
-     .form-step { display: none; }
-     .form-step.active {
-         display: block;
-         animation: fadeIn 0.3s ease;
-     }
-     @keyframes fadeIn {
-         from { opacity: 0; transform: translateY(6px); }
-         to { opacity: 1; transform: translateY(0); }
-     }
-     .step-title {
-         font-size: 0.9rem;
-         font-weight: 600;
-         color: #333;
-         margin-bottom: 18px;
-         padding-bottom: 8px;
-         border-bottom: 1px solid #eee;
-     }
-     
-     .form-group { margin-bottom: 14px; }
-     
-     .form-group label {
-         display: block;
-         font-size: 0.8rem;
-         font-weight: 500;
-         color: #333;
-         margin-bottom: 5px;
-     }
-     
-     /* Inputs + select */
-     .form-group input[type="text"],
-     .form-group input[type="email"],
-     .form-group input[type="number"],
-     .form-group input[type="date"],
-     .form-group input[type="password"],
-     .form-group select {
-         width: 100%;
-         padding: 10px 14px;
-         font-size: 0.9rem;
-         border-radius: 10px;
-         border: 1px solid #ddd;
-         background: #ffffff;
-         color: #222;
-     }
-     
-     .form-group input::placeholder { color: #999; }
-     
-     .form-group input:focus,
-     .form-group select:focus {
-         outline: none;
-         border-color: #c0392b;
-         box-shadow: 0 0 0 3px rgba(192,57,43,0.18);
-     }
-     
-     .form-group select option {
-         background: #ffffff;
-         color: #222;
-     }
-     
-     /* Password */
-     .password-wrapper { position: relative; }
-     .password-wrapper input { padding-right: 42px; }
-     
-     .password-toggle {
-         position: absolute;
-         right: 12px;
-         top: 50%;
-         transform: translateY(-50%);
-         cursor: pointer;
-         font-size: 14px;
-         color: rgba(0,0,0,0.45);
-     }
-     .password-toggle:hover { color: #222; }
-     
-     .help {
-         font-size: 0.72rem;
-         color: #777;
-         margin-top: 4px;
-     }
-     .field-error {
-         font-size: 0.75rem;
-         color: #c0392b;
-         margin-top: 4px;
-     }
-     .alert-error {
-         padding: 12px 14px;
-         border-radius: 10px;
-         margin-bottom: 16px;
-         font-size: 0.85rem;
-         background: rgba(192, 57, 43, 0.10);
-         color: #8d1f17;
-         border: 1px solid rgba(192, 57, 43, 0.18);
-     }
-     
-     /* Grids */
-     .grid-2 {
-         display: grid;
-         grid-template-columns: 1fr 1fr;
-         gap: 14px;
-     }
-     .grid-3 {
-         display: grid;
-         grid-template-columns: repeat(3, 1fr);
-         gap: 14px;
-     }
-     @media (max-width: 600px) {
-         .grid-2, .grid-3 { grid-template-columns: 1fr; }
-     }
-     
-     /* Checkbox + radio */
-     .checkbox-row, .radio-row {
-         display: flex;
-         flex-wrap: wrap;
-         gap: 10px 20px;
-         align-items: center;
-         margin-top: 6px;
-     }
-     .checkbox-row label, .radio-row label {
-         font-size: 0.85rem;
-         font-weight: 500;
-         display: inline-flex;
-         gap: 8px;
-         align-items: center;
-         color: #333;
-         cursor: pointer;
-     }
-     
-     .form-group input[type="file"] {
-         padding: 8px;
-         font-size: 0.85rem;
-         border-radius: 10px;
-         border: 1px solid #ddd;
-         background: #fff;
-         color: #222;
-     }
-     .location-detect-wrap { padding: 12px 0; }
-     .btn-location {
-         padding: 10px 18px;
-         font-size: 0.9rem;
-         font-weight: 600;
-         color: #c0392b;
-         background: rgba(192, 57, 43, 0.08);
-         border: 1px solid rgba(192, 57, 43, 0.3);
-         border-radius: 10px;
-         cursor: pointer;
-         transition: background 0.2s, border-color 0.2s;
-     }
-     .btn-location:hover { background: rgba(192, 57, 43, 0.15); border-color: #c0392b; }
-     .btn-location:disabled { opacity: 0.6; cursor: not-allowed; }
-     
-     /* Footer buttons */
-     .form-footer {
-         margin-top: 24px;
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-         gap: 12px;
-         flex-wrap: wrap;
-     }
-     
-     .btn-secondary {
-         padding: 10px 20px;
-         font-size: 0.9rem;
-         font-weight: 600;
-         color: #333;
-         background: #f4f4f4;
-         border: 1px solid #ddd;
-         border-radius: 999px;
-         cursor: pointer;
-         transition: background 0.15s ease;
-     }
-     .btn-secondary:hover { background: #ededed; }
-     .btn-secondary.hidden { visibility: hidden; }
-     
-     .btn-primary {
-         padding: 12px 28px;
-         font-size: 0.95rem;
-         font-weight: 600;
-         color: #fff;
-         background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
-         border: none;
-         border-radius: 999px;
-         cursor: pointer;
-         transition: transform 0.15s ease, box-shadow 0.15s ease;
-     }
-     .btn-primary:hover {
-         transform: translateY(-1px);
-         box-shadow: 0 8px 24px rgba(192, 57, 43, 0.22);
-     }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; max-width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: Inter, system-ui, sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            min-height: 100dvh;
+            color: #102A56;
+            margin: 0;
+            background: #F8FAFC;
+        }
+        .gcp-shell {
+            height: 100vh;
+            height: 100dvh;
+            display: grid;
+            grid-template-columns: minmax(200px, 0.75fr) minmax(380px, 1.4fr);
+            overflow: hidden;
+        }
+        .gcp-hero {
+            padding: clamp(16px, 2.5vh, 28px) 22px; color: #102A56;
+            background: linear-gradient(160deg, #FFF1F2 0%, #FFE4E6 48%, #fff 100%);
+            display: flex; flex-direction: column; justify-content: space-between;
+            border-right: 1px solid rgba(229,57,53,0.1);
+            min-height: 0;
+        }
+        .gcp-hero .brand { display: flex; align-items: center; gap: 10px; }
+        .gcp-hero .brand-logo {
+            width: 40px; height: 40px; border-radius: 12px; background: #fff;
+            display: grid; place-items: center;
+        }
+        .gcp-hero .brand-logo img { width: 28px; height: 28px; object-fit: contain; }
+        .gcp-hero .brand strong { display: block; font-size: 0.95rem; font-weight: 800; }
+        .gcp-hero .brand span { font-size: 0.7rem; color: #64748B; }
+        .gcp-hero h1 { font-size: clamp(1.25rem, 2.2vw, 1.75rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 18px 0 8px; color: #102A56; }
+        .gcp-hero p { color: #64748B; max-width: 32ch; font-size: 0.82rem; line-height: 1.4; }
+        .gcp-panel {
+            padding: clamp(12px, 2vh, 20px) 16px;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-width: 0; min-height: 0; overflow-y: auto;
+            background: linear-gradient(180deg,#fff,#f8fafc);
+        }
+        .page-wrap { width: 100%; max-width: 860px; }
+        .welcome-overlay {
+            position: fixed; inset: 0; background: rgba(17, 12, 14, 0.58);
+            display: flex; align-items: center; justify-content: center; z-index: 100;
+            padding: 16px; opacity: 1; transition: opacity 0.35s ease; backdrop-filter: blur(4px);
+        }
+        .welcome-overlay.hidden { opacity: 0; pointer-events: none; }
+        .welcome-card {
+            max-width: 380px; background: #fff; color: #1f2937; width: 100%;
+            border-radius: 14px; padding: 22px 20px; text-align: center;
+            border: 1px solid #fecaca; box-shadow: 0 20px 48px rgba(0,0,0,0.2);
+        }
+        .welcome-card .icon-wrap {
+            width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; background: #fef2f2; border: 1px solid #fecaca; color: #c62828;
+        }
+        .welcome-card h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; color: #111827; }
+        .welcome-card p { font-size: 0.82rem; line-height: 1.45; margin-bottom: 16px; color: #6b7280; }
+        .btn-welcome {
+            display: inline-flex; align-items: center; justify-content: center;
+            height: 40px; padding: 0 22px; font-size: 0.86rem; font-weight: 700; color: #fff;
+            background: linear-gradient(180deg, #e53935, #c62828); border: none; border-radius: 999px;
+            cursor: pointer; box-shadow: 0 8px 18px rgba(198,40,40,0.26);
+        }
+        .form-container {
+            width: 100%; background: #fff; color: #1f2937;
+            border-radius: 14px; padding: 0; border: 1px solid #e5e7eb;
+            box-shadow: 0 12px 36px rgba(151, 20, 33, 0.08); overflow: hidden;
+        }
+        .form-container.hidden { display: none; }
+        .card-accent { height: 4px; background: linear-gradient(90deg, #971421, #c62828, #fecaca); }
+        .card-body { padding: 14px 18px 16px; }
+        .form-header { text-align: center; margin-bottom: 10px; }
+        .brand-mark {
+            width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+            background: #fef2f2; border: 1px solid #fecaca;
+        }
+        .form-header h1 { font-size: 1.15rem; font-weight: 800; color: #111827; letter-spacing: -0.02em; }
+        .form-header .sub { font-size: 0.74rem; color: #6b7280; margin-top: 3px; word-break: break-word; }
+        .steps-bar {
+            display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px;
+            padding: 8px 10px; background: #fff7f7; border: 1px solid #fecaca; border-radius: 10px;
+        }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb; }
+        .step-dot.active { background: #c62828; transform: scale(1.25); box-shadow: 0 0 0 3px rgba(198,40,40,0.15); }
+        .step-dot.done { background: #16a34a; }
+        .step-line { width: 36px; height: 2px; background: #e5e7eb; border-radius: 2px; }
+        .step-line.done { background: rgba(198,40,40,0.45); }
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+        .step-title {
+            font-size: 0.82rem; font-weight: 700; color: #111827; margin-bottom: 10px; padding-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 8px;
+        }
+        .step-title::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #c62828; }
+        .form-group { margin-bottom: 0; min-width: 0; }
+        .form-group label { display: block; font-size: 0.7rem; font-weight: 600; color: #4b5563; margin-bottom: 4px; }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group input[type="password"],
+        .form-group input[type="tel"],
+        .form-group select,
+        .form-group textarea {
+            width: 100% !important;
+            max-width: 100%;
+            height: 38px;
+            padding: 0 11px !important;
+            font-size: 0.8rem !important;
+            line-height: 1.35;
+            border-radius: 10px !important;
+            border: 1px solid #e5e7eb !important;
+            background: #fafafa !important;
+            color: #111827 !important;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-group textarea { height: auto; min-height: 72px; padding: 8px 11px !important; }
+        .form-group input::placeholder { color: #9ca3af; opacity: 1; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none !important;
+            border-color: #c62828 !important;
+            background: #fff !important;
+            box-shadow: 0 0 0 3px rgba(198,40,40,0.12);
+        }
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 46px !important; }
+        .password-toggle {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            cursor: pointer; font-size: 0.7rem; font-weight: 700; color: #6b7280; z-index: 2;
+        }
+        .help { font-size: 0.66rem; color: #9ca3af; margin-top: 2px; }
+        .field-error { font-size: 0.68rem; color: #c62828; margin-top: 2px; }
+        .alert-error { padding: 8px 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.76rem; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px 12px;
+            align-items: start;
+        }
+        @media (min-width: 900px) {
+            .grid-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+        .span-2, .span-4 { grid-column: 1 / -1; }
+        .checkbox-row, .radio-row { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 4px; }
+        .checkbox-row label, .radio-row label { font-size: 0.78rem; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; color: #374151; cursor: pointer; }
+        .form-group input[type="file"] { width: 100%; height: auto; padding: 6px 10px; font-size: 0.76rem; border-radius: 10px; border: 1px dashed #fecaca; background: #fff7f7; }
+        .location-detect-wrap {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+            padding: 8px 12px; margin-bottom: 10px; background: #fff7f7; border: 1px solid #fecaca; border-radius: 10px;
+        }
+        .btn-location {
+            height: 34px; padding: 0 12px; font-size: 0.78rem; font-weight: 700; color: #c62828;
+            background: #fff; border: 1px solid #fecaca; border-radius: 999px; cursor: pointer;
+        }
+        .form-footer {
+            margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3f4f6;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .btn-secondary {
+            height: 36px; padding: 0 16px; font-size: 0.8rem; font-weight: 700; color: #374151;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 999px; cursor: pointer;
+        }
+        .btn-secondary.hidden { visibility: hidden; }
+        .btn-primary {
+            height: 36px; padding: 0 20px; font-size: 0.82rem; font-weight: 700; color: #fff;
+            background: linear-gradient(180deg, #e53935, #c62828); border: none; border-radius: 999px;
+            cursor: pointer; box-shadow: 0 8px 18px rgba(198,40,40,0.26);
+        }
+        .btn-primary.hidden { display: none !important; }
+        @media (max-height: 780px) {
+            .brand-mark { display: none; }
+            .gcp-hero h1 { margin: 10px 0 6px; }
+            .card-body { padding: 12px 14px 14px; }
+        }
+        @media (max-width: 980px) {
+            html, body { height: auto; overflow: auto; }
+            .gcp-shell { height: auto; min-height: 100vh; grid-template-columns: 1fr; overflow: visible; }
+            .gcp-hero { padding: 18px 16px; }
+            .gcp-hero h1 { margin: 12px 0 6px; }
+            .gcp-panel { padding: 12px 12px 24px; overflow: visible; }
+        }
+        @media (max-width: 640px) {
+            .card-body { padding: 14px 12px 16px; }
+            .grid-4, .grid-2 { grid-template-columns: 1fr !important; }
+            .form-footer { flex-direction: column-reverse; align-items: stretch; }
+            .btn-primary, .btn-secondary { width: 100%; text-align: center; }
+            .btn-secondary.hidden { display: none; visibility: visible; }
+            .location-detect-wrap { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
+<div class="gcp-shell">
+    <aside class="gcp-hero" aria-label="Blood 450">
+        <div class="brand">
+            <div class="brand-logo">
+                <img src="{% static 'images/blood450_logo.svg' %}" alt="Blood 450">
+            </div>
+            <div>
+                <strong>Blood 450</strong>
+                <span>Donate Blood, Save Lives</span>
+            </div>
+        </div>
+        <div>
+            <h1>Almost done.<br>Finish your donor profile.</h1>
+            <p>A few details help us match you safely with nearby emergency blood requests.</p>
+        </div>
+        <div></div>
+    </aside>
+    <main class="gcp-panel">
 
     <!-- Welcome modal (hidden if form has errors on re-render) -->
     <div class="welcome-overlay" id="welcomeOverlay"{% if form.errors %} style="display: none;"{% endif %}>
@@ -363,9 +238,13 @@
         </div>
     </div>
 
-    <!-- 3-step form (centered) -->
+    <!-- 3-step form -->
+    <div class="page-wrap">
     <div class="form-container{% if not form.errors %} hidden{% endif %}" id="formContainer">
+        <div class="card-accent" aria-hidden="true"></div>
+        <div class="card-body">
         <div class="form-header">
+            <div class="brand-mark" aria-hidden="true">🩸</div>
             <h1>Complete your donor profile</h1>
             <p class="sub">Signed in with Google: <strong>{{ google_email }}</strong></p>
         </div>
@@ -392,7 +271,7 @@
             <!-- Step 1: Basic info -->
             <div class="form-step active" data-step="1">
                 <div class="step-title">Step 1 — Basic information</div>
-                <div class="grid-2">
+                <div class="grid-4">
                     <div class="form-group">
                         <label for="{{ form.mobile.id_for_label }}">Mobile *</label>
                         {{ form.mobile }}
@@ -443,14 +322,14 @@
                 <div class="step-title">Step 2 — Location & donation info</div>
                 {{ form.last_lat }}
                 {{ form.last_lng }}
-                <div class="location-detect-wrap" style="margin-bottom: 18px;">
+                <div class="location-detect-wrap">
                     <p id="locationStatus" class="help" style="margin-bottom: 8px;"></p>
                     <button type="button" id="btnDetectLocation" class="btn-location">
                         📍 Detect my location
                     </button>
                     <span class="help" style="display: block; margin-top: 6px;">We'll use this to match you with nearby blood requests. You can also enter address manually below.</span>
                 </div>
-                <div class="grid-3">
+                <div class="grid-4">
                     <div class="form-group">
                         <label for="{{ form.state.id_for_label }}">State</label>
                         {{ form.state }}
@@ -466,21 +345,19 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
+                        <label for="{{ form.area.id_for_label }}">Area / Locality</label>
+                        {{ form.area }}
+                        {% if form.area.errors %}
+                            <div class="field-error">{{ form.area.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
                         <label for="{{ form.pincode.id_for_label }}">Pincode</label>
                         {{ form.pincode }}
                         {% if form.pincode.errors %}
                             <div class="field-error">{{ form.pincode.errors.0 }}</div>
                         {% endif %}
                     </div>
-                </div>
-                <div class="form-group" style="margin-top: 14px;">
-                    <label for="{{ form.area.id_for_label }}">Area / Locality</label>
-                    {{ form.area }}
-                    {% if form.area.errors %}
-                        <div class="field-error">{{ form.area.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="grid-2" style="margin-top: 14px;">
                     <div class="form-group">
                         <label for="{{ form.donated_before.id_for_label }}">Donated blood before?</label>
                         {{ form.donated_before }}
@@ -544,7 +421,7 @@
                             <div class="field-error">{{ form.occupation.errors.0 }}</div>
                         {% endif %}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group span-2">
                         <label for="{{ form.profile_photo.id_for_label }}">Profile Photo</label>
                         {{ form.profile_photo }}
                         {% if form.profile_photo.errors %}
@@ -558,7 +435,7 @@
             <!-- Step 3: Password & consent -->
             <div class="form-step" data-step="3">
                 <div class="step-title">Step 3 — Security & consent</div>
-                <div class="grid-2">
+                <div class="grid-4">
                     <div class="form-group">
                         <label for="{{ form.password.id_for_label }}">Password *</label>
                         <div class="password-wrapper">
@@ -593,26 +470,26 @@
                             <div class="field-error">{{ form.emergency_contact_number.errors.0 }}</div>
                         {% endif %}
                     </div>
-                </div>
-                <div class="form-group" style="margin-top: 14px;">
-                    <div class="checkbox-row">
-                        <label for="{{ form.consent_contact.id_for_label }}">
-                            {{ form.consent_contact }} I agree to be contacted for blood donation requests
-                        </label>
+                    <div class="form-group span-4">
+                        <div class="checkbox-row">
+                            <label for="{{ form.consent_contact.id_for_label }}">
+                                {{ form.consent_contact }} I agree to be contacted for blood donation requests
+                            </label>
+                        </div>
+                        {% if form.consent_contact.errors %}
+                            <div class="field-error">{{ form.consent_contact.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    {% if form.consent_contact.errors %}
-                        <div class="field-error">{{ form.consent_contact.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="form-group" style="margin-top: 10px;">
-                    <div class="checkbox-row">
-                        <label for="{{ form.consent_terms.id_for_label }}">
-                            {{ form.consent_terms }} I accept Terms &amp; Privacy Policy
-                        </label>
+                    <div class="form-group span-4">
+                        <div class="checkbox-row">
+                            <label for="{{ form.consent_terms.id_for_label }}">
+                                {{ form.consent_terms }} I accept Terms &amp; Privacy Policy
+                            </label>
+                        </div>
+                        {% if form.consent_terms.errors %}
+                            <div class="field-error">{{ form.consent_terms.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    {% if form.consent_terms.errors %}
-                        <div class="field-error">{{ form.consent_terms.errors.0 }}</div>
-                    {% endif %}
                 </div>
             </div>
 
@@ -622,7 +499,11 @@
                 <button type="submit" class="btn-primary hidden" id="btnSubmit">Save & go to dashboard</button>
             </div>
         </form>
+        </div>
     </div>
+    </div>
+    </main>
+</div>
 
 <script>
 (function() {

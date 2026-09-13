@@ -397,3 +397,38 @@ class GoogleProfileCompletionForm(forms.Form):
         if len(digits) != 10:
             raise ValidationError('Enter a valid 10-digit number.')
         return digits
+
+
+class DonorProfileEditForm(forms.Form):
+    """Edit donor User + DonorProfile + UserProfile fields used on the web profile page."""
+    GENDER_CHOICES = [('', 'Select gender')] + list(UserProfile.GENDER_CHOICES)
+
+    first_name = forms.CharField(max_length=150, required=False, label='Full Name (First)')
+    last_name = forms.CharField(max_length=150, required=False, label='Last Name')
+    phone = forms.CharField(max_length=15, required=False, label='Phone Number')
+    date_of_birth = forms.DateField(
+        required=False, label='Date of Birth',
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label='Gender')
+    blood_group = forms.ChoiceField(
+        choices=[('', 'Select blood group')] + list(DonorProfile.BLOOD_GROUP_CHOICES),
+        required=False, label='Blood Group'
+    )
+    address = forms.CharField(
+        max_length=200, required=False, label='Address',
+        widget=forms.TextInput(attrs={'placeholder': 'Street / area'})
+    )
+    city = forms.CharField(max_length=100, required=False, label='City')
+    state = forms.CharField(max_length=100, required=False, label='State')
+    pincode = forms.CharField(max_length=10, required=False, label='Pincode')
+    profile_photo = forms.ImageField(required=False, label='Profile Image')
+
+    def clean_phone(self):
+        val = (self.cleaned_data.get('phone') or '').strip()
+        if not val:
+            return ''
+        digits = ''.join(c for c in val if c.isdigit())
+        if len(digits) not in (10, 12):
+            raise ValidationError('Enter a valid 10-digit mobile number.')
+        return digits[-10:] if len(digits) >= 10 else digits

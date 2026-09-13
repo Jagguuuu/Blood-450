@@ -1,264 +1,415 @@
 {% extends 'base.html' %}
 
 {% block title %}Create Blood Request - Admin{% endblock %}
+{% block page_heading %}Create Request{% endblock %}
+{% block page_subheading %}Notify matching donors{% endblock %}
 
 {% block extra_styles %}
 <style>
-    .form-container {
-        max-width: 600px;
+    .create-request-page {
+        max-width: 720px;
         margin: 0 auto;
     }
-    
-    .form-container h2 {
-        color: #2c3e50;
-        margin-bottom: 30px;
-        text-align: center;
+
+    .create-request-card {
+        background: #fff;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(16, 42, 86, 0.08));
+        overflow: hidden;
     }
-    
+
+    .create-request-card::before {
+        content: "";
+        display: block;
+        height: 4px;
+        background: linear-gradient(90deg, #E53935, #C62828);
+    }
+
+    .form-section {
+        padding: 22px 24px;
+        border-bottom: 1px solid #F1F5F9;
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .form-section-title {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #102A56;
+        letter-spacing: -0.01em;
+    }
+
+    .form-section-sub {
+        margin: 0 0 18px;
+        font-size: 13px;
+        color: #64748B;
+    }
+
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
-    
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
     .form-group label {
         display: block;
-        margin-bottom: 8px;
-        color: #555;
-        font-weight: 500;
+        margin-bottom: 6px;
+        color: #102A56;
+        font-weight: 600;
+        font-size: 13px;
     }
-    
+
     .form-group input,
     .form-group select,
     .form-group textarea {
         width: 100%;
-        padding: 12px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 16px;
+        height: 46px;
+        padding: 0 14px;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        font-size: 14px;
         font-family: inherit;
+        color: #102A56;
+        background: #F8FAFC;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        box-sizing: border-box;
     }
-    
+
+    .form-group textarea {
+        height: auto;
+        min-height: 100px;
+        padding: 12px 14px;
+        resize: vertical;
+    }
+
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
         outline: none;
-        border-color: #667eea;
-    }
-    
-    .form-group textarea {
-        min-height: 100px;
-        resize: vertical;
-    }
-    
-    .form-actions {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 30px;
-    }
-    
-    .badge {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-    
-    .badge-critical {
-        background: #e74c3c;
-        color: white;
-    }
-    
-    .badge-high {
-        background: #f39c12;
-        color: white;
-    }
-    
-    .badge-medium {
-        background: #3498db;
-        color: white;
+        border-color: #E53935;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
     }
 
-    .location-section {
-        margin-top: 24px;
-        padding: 16px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
+    .form-group small,
+    .form-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #64748B;
     }
-    .location-toggle .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        font-weight: 500;
-        color: #2c3e50;
+
+    .form-group small a,
+    .form-hint a {
+        color: #E53935;
+        font-weight: 600;
+        text-decoration: none;
     }
-    .location-toggle input[type="checkbox"] {
-        width: auto;
+
+    .form-group small a:hover,
+    .form-hint a:hover {
+        text-decoration: underline;
     }
-    .location-fields {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #e0e0e0;
-    }
+
     .form-row {
         display: flex;
         gap: 16px;
     }
+
     .form-row .half {
         flex: 1;
+        min-width: 0;
     }
-    .info-box {
-        margin-top: 20px;
-        padding: 14px 16px;
-        background: #e8f4fd;
-        border-left: 4px solid #3498db;
-        border-radius: 4px;
+
+    .city-manual-input {
+        margin-top: 8px;
+    }
+
+    .location-section {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    .location-toggle .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #102A56;
         font-size: 14px;
-        color: #2c3e50;
+        line-height: 1.4;
     }
+
+    .location-toggle input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        accent-color: #E53935;
+    }
+
+    .location-fields {
+        margin-top: 16px;
+        padding: 16px;
+        background: #FFF1F2;
+        border: 1px solid #FFE4E6;
+        border-radius: 12px;
+    }
+
+    .btn-location {
+        padding: 12px 18px;
+        height: 46px;
+        background: #102A56;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: inherit;
+        transition: background 0.15s ease;
+    }
+
+    .btn-location:hover {
+        background: #0c1f40;
+    }
+
+    .btn-location:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+    .info-box {
+        margin: 0;
+        padding: 14px 16px;
+        background: #FFF1F2;
+        border-left: 4px solid #E53935;
+        border-radius: 0 12px 12px 0;
+        font-size: 13px;
+        color: #334155;
+        line-height: 1.5;
+    }
+
     .info-box a {
-        color: #2980b9;
+        color: #E53935;
+        font-weight: 600;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: stretch;
+        padding: 20px 24px 24px;
+        background: #F8FAFC;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .btn-submit-request {
+        width: 100%;
+        height: 48px;
+        padding: 0 24px;
+        background: linear-gradient(135deg, #E53935, #C62828);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.28);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-submit-request:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(229, 57, 53, 0.34);
+    }
+
+    @media (max-width: 640px) {
+        .form-section {
+            padding: 18px 16px;
+        }
+
+        .form-actions {
+            padding: 16px;
+        }
+
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-row .half {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Create Blood Request</h2>
-    
-    <form method="post" action="">
-        {% csrf_token %}
-        
-        <!-- Debug: Check if CSRF token is present -->
-        <!-- {{ csrf_token }} -->
-        
-        <div class="form-group">
-            <label for="blood_group">Blood Group: *</label>
-            <select id="blood_group" name="blood_group" required>
-                <option value="">Select Blood Group</option>
-                {% for value, label in blood_groups %}
-                    <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="units_needed">Units Needed: *</label>
-            <input type="number" id="units_needed" name="units_needed" min="1" value="1" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="urgency">Urgency Level: *</label>
-            <select id="urgency" name="urgency" required>
-                <option value="">Select Urgency</option>
-                {% for value, label in urgency_levels %}
-                    <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="note">Additional Notes:</label>
-            <textarea id="note" name="note" placeholder="Enter any additional information about the blood request..."></textarea>
-        </div>
+<div class="create-request-page">
+    <div class="create-request-card">
+        <form method="post" action="">
+            {% csrf_token %}
 
-        <div class="form-row">
-            <div class="form-group half">
-                <label for="hospital_id">Hospital (optional):</label>
-                <select id="hospital_id" name="hospital_id">
-                    <option value="">-- Select or leave blank --</option>
-                    {% for h in hospitals %}
-                    <option value="{{ h.hospital_id }}">{{ h.hospital_name }} ({{ h.hospital_id }})</option>
-                    {% endfor %}
-                </select>
-                <small style="color: #6b7280;">No hospitals? <a href="{% url 'admin_add_hospital' %}" target="_blank">Add one</a> then create request.</small>
-            </div>
-            <div class="form-group half">
-                <label for="source">Source:</label>
-                <select id="source" name="source">
-                    <option value="app">App</option>
-                    <option value="call">Call</option>
-                    <option value="hospital">Hospital</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group half">
-                <label for="city">City (optional):</label>
-                <select id="city_select" name="city_select">
-                    <option value="">-- Select or type below --</option>
-                    {% for c in cities %}
-                    <option value="{{ c.city }}" data-state="{{ c.state }}">{{ c.city }}, {{ c.state }}</option>
-                    {% endfor %}
-                </select>
-                <input type="text" id="city" name="city" placeholder="Or type city e.g. Hyderabad" style="margin-top: 6px;">
-                <small style="color: #6b7280;"><a href="{% url 'admin_add_city' %}" target="_blank">Add city</a></small>
-            </div>
-            <div class="form-group half">
-                <label for="state">State (optional):</label>
-                <input type="text" id="state" name="state" placeholder="e.g. Telangana">
-            </div>
-        </div>
-        <script>
-        document.getElementById('city_select').addEventListener('change', function() {
-            var opt = this.options[this.selectedIndex];
-            if (opt.value) {
-                document.getElementById('city').value = opt.value;
-                document.getElementById('state').value = opt.dataset.state || '';
-            }
-        });
-        </script>
-        <div class="form-group">
-            <label for="sla_minutes">SLA (minutes, optional):</label>
-            <input type="number" id="sla_minutes" name="sla_minutes" min="0" placeholder="Target fulfillment time in minutes">
-        </div>
+            <div class="form-section">
+                <h3 class="form-section-title">Blood Requirement</h3>
+                <p class="form-section-sub">Core details for matching donors</p>
 
-        <!-- Request location (optional) for distance-based matching -->
-        <div class="form-group location-section">
-            <div class="location-toggle">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="use_location" name="use_location" value="on">
-                    <span>Notify only donors within a radius (location-based matching)</span>
-                </label>
-            </div>
-            <div id="location-fields" class="location-fields" style="display: none;">
                 <div class="form-group">
-                    <label for="location_name">Location name (e.g. Kondapur Hospital):</label>
-                    <input type="text" id="location_name" name="location_name" placeholder="e.g. Kondapur Hospital">
+                    <label for="blood_group">Blood Group *</label>
+                    <select id="blood_group" name="blood_group" required>
+                        <option value="">Select Blood Group</option>
+                        {% for value, label in blood_groups %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group half">
-                        <label for="req_lat">Latitude: *</label>
-                        <input type="text" id="req_lat" name="req_lat" placeholder="e.g. 17.4842" step="any">
+                        <label for="units_needed">Units Needed *</label>
+                        <input type="number" id="units_needed" name="units_needed" min="1" value="1" required>
                     </div>
                     <div class="form-group half">
-                        <label for="req_lng">Longitude: *</label>
-                        <input type="text" id="req_lng" name="req_lng" placeholder="e.g. 78.3894" step="any">
+                        <label for="urgency">Urgency Level *</label>
+                        <select id="urgency" name="urgency" required>
+                            <option value="">Select Urgency</option>
+                            {% for value, label in urgency_levels %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <button type="button" id="getLocationBtn" style="padding: 10px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                        📍 Enable location & get coordinates
-                    </button>
-                    <p id="locationMessage" style="font-size: 13px; margin-top: 8px; display: none;"></p>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Hospital / Location</h3>
+                <p class="form-section-sub">Where the blood is needed</p>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="hospital_id">Hospital (optional)</label>
+                        <select id="hospital_id" name="hospital_id">
+                            <option value="">-- Select or leave blank --</option>
+                            {% for h in hospitals %}
+                            <option value="{{ h.hospital_id }}">{{ h.hospital_name }} ({{ h.hospital_id }})</option>
+                            {% endfor %}
+                        </select>
+                        <small>No hospitals? <a href="{% url 'admin_add_hospital' %}" target="_blank">Add one</a> then create request.</small>
+                    </div>
+                    <div class="form-group half">
+                        <label for="source">Source</label>
+                        <select id="source" name="source">
+                            <option value="app">App</option>
+                            <option value="call">Call</option>
+                            <option value="hospital">Hospital</option>
+                        </select>
+                    </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="city">City (optional)</label>
+                        <select id="city_select" name="city_select">
+                            <option value="">-- Select or type below --</option>
+                            {% for c in cities %}
+                            <option value="{{ c.city }}" data-state="{{ c.state }}">{{ c.city }}, {{ c.state }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="city" name="city" class="city-manual-input" placeholder="Or type city e.g. Hyderabad">
+                        <small><a href="{% url 'admin_add_city' %}" target="_blank">Add city</a></small>
+                    </div>
+                    <div class="form-group half">
+                        <label for="state">State (optional)</label>
+                        <input type="text" id="state" name="state" placeholder="e.g. Telangana">
+                    </div>
+                </div>
+                <script>
+                document.getElementById('city_select').addEventListener('change', function() {
+                    var opt = this.options[this.selectedIndex];
+                    if (opt.value) {
+                        document.getElementById('city').value = opt.value;
+                        document.getElementById('state').value = opt.dataset.state || '';
+                    }
+                });
+                </script>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Emergency Details</h3>
+                <p class="form-section-sub">Timing and radius-based donor matching</p>
+
                 <div class="form-group">
-                    <label for="radius_km">Radius (km):</label>
-                    <input type="number" id="radius_km" name="radius_km" min="0.1" max="500" step="0.5" value="5" placeholder="5">
+                    <label for="sla_minutes">SLA (minutes, optional)</label>
+                    <input type="number" id="sla_minutes" name="sla_minutes" min="0" placeholder="Target fulfillment time in minutes">
+                </div>
+
+                <div class="form-group location-section">
+                    <div class="location-toggle">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="use_location" name="use_location" value="on">
+                            <span>Notify only donors within a radius (location-based matching)</span>
+                        </label>
+                    </div>
+                    <div id="location-fields" class="location-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="location_name">Location name (e.g. Kondapur Hospital)</label>
+                            <input type="text" id="location_name" name="location_name" placeholder="e.g. Kondapur Hospital">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="req_lat">Latitude *</label>
+                                <input type="text" id="req_lat" name="req_lat" placeholder="e.g. 17.4842" step="any">
+                            </div>
+                            <div class="form-group half">
+                                <label for="req_lng">Longitude *</label>
+                                <input type="text" id="req_lng" name="req_lng" placeholder="e.g. 78.3894" step="any">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" id="getLocationBtn" class="btn-location">
+                                📍 Enable location & get coordinates
+                            </button>
+                            <p id="locationMessage" style="font-size: 13px; margin-top: 8px; display: none;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="radius_km">Radius (km)</label>
+                            <input type="number" id="radius_km" name="radius_km" min="0.1" max="500" step="0.5" value="5" placeholder="5">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="info-box">
-            <strong>How donors respond:</strong> Notified donors see this request in the mobile app (or <a href="{% url 'donor_notifications' %}">Notifications page</a>). They can tap <strong>Accept & Donate</strong> or <strong>Can't Donate</strong>. You can see who accepted on the request detail page after creating.
-        </div>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn btn-success">Create Request & Notify Donors</button>
-        </div>
-    </form>
+            <div class="form-section">
+                <h3 class="form-section-title">Additional</h3>
+                <p class="form-section-sub">Optional notes for the care team</p>
+
+                <div class="form-group">
+                    <label for="note">Additional Notes</label>
+                    <textarea id="note" name="note" placeholder="Enter any additional information about the blood request..."></textarea>
+                </div>
+
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>How donors respond:</strong> Notified donors see this request in the mobile app (or <a href="{% url 'donor_notifications' %}">Notifications page</a>). They can tap <strong>Accept & Donate</strong> or <strong>Can't Donate</strong>. You can see who accepted on the request detail page after creating.
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit-request">Create Request & Notify Donors</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -283,7 +434,7 @@ document.getElementById('getLocationBtn').addEventListener('click', function() {
     btn.disabled = true;
     btn.textContent = 'Getting location...';
     if (!navigator.geolocation) {
-        if (msgEl) { msgEl.textContent = 'Browser does not support geolocation.'; msgEl.style.display = 'block'; msgEl.style.color = '#c0392b'; }
+        if (msgEl) { msgEl.textContent = 'Browser does not support geolocation.'; msgEl.style.display = 'block'; msgEl.style.color = '#C62828'; }
         btn.disabled = false;
         btn.textContent = '📍 Enable location & get coordinates';
         return;
@@ -302,7 +453,7 @@ document.getElementById('getLocationBtn').addEventListener('click', function() {
             else if (err.code === 2) msg += 'position unavailable.';
             else if (err.code === 3) msg += 'timeout.';
             else msg += err.message;
-            if (msgEl) { msgEl.textContent = msg; msgEl.style.display = 'block'; msgEl.style.color = '#c0392b'; }
+            if (msgEl) { msgEl.textContent = msg; msgEl.style.display = 'block'; msgEl.style.color = '#C62828'; }
             btn.disabled = false;
             btn.textContent = '📍 Enable location & get coordinates';
         },

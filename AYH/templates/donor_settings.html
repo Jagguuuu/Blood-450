@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - Blood 450{% endblock %}
+{% block page_heading %}Settings{% endblock %}
+{% block page_subheading %}Manage availability and preferences{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .settings-wrap { max-width: 560px; margin: 0 auto; }
+  .settings-card {
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px;
+    box-shadow: 0 8px 24px rgba(16,42,86,.06);
+  }
+  .settings-card h2 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 800; color: #102A56; }
+  .settings-card .sub { margin: 0 0 16px; color: #64748B; font-size: 0.82rem; }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 0; border-top: 1px solid #F1F5F9;
+  }
+  .toggle-row label { font-weight: 700; color: #102A56; font-size: 0.88rem; }
+  .toggle-row p { margin: 2px 0 0; font-size: 0.76rem; color: #64748B; }
+  .toggle-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #E53935; }
+  .btn-save {
+    margin-top: 16px; height: 40px; width: 100%; border: 0; border-radius: 10px;
+    background: linear-gradient(180deg,#E53935,#C62828); color: #fff; font-weight: 700;
+    font-size: 0.84rem; cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-wrap">
+  <div class="settings-card">
+    <h2>Donor settings</h2>
+    <p class="sub">Control how you appear for matching.</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="toggle-row">
+        <div>
+          <label for="id_is_available">Available to donate</label>
+          <p>When off, you won’t be matched for new nearby requests.</p>
+        </div>
+        <input type="checkbox" id="id_is_available" name="is_available" {% if donor_profile.is_available %}checked{% endif %}>
+      </div>
+      <button type="submit" class="btn-save">Save settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

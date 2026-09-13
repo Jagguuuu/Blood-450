@@ -4,234 +4,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Blood Donation System</title>
+    <title>Login - Blood 450</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --red: #E53935;
+            --red-dark: #C62828;
+            --navy: #102A56;
+            --pink: #FFF1F2;
+            --pink-deep: #FFE4E6;
+            --bg: #F8FAFC;
+            --white: #ffffff;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --shadow-card: 0 12px 32px rgba(16, 42, 86, 0.09);
+            --radius: 12px;
+            --ctrl-h: 42px;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
         body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: Inter, system-ui, sans-serif;
             font-size: 14px;
             min-height: 100vh;
-            overflow-x: hidden;
+            min-height: 100dvh;
+            background: var(--bg);
+            color: var(--navy);
         }
-
         .login-page {
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh;
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            overflow: hidden;
+        }
+        .login-hero {
+            background: linear-gradient(160deg, var(--pink) 0%, #FFE8EA 45%, #fff 100%);
+            padding: clamp(18px, 2.8vh, 28px) clamp(24px, 3vw, 40px);
             display: flex;
-            align-items: stretch;
-            width: 100%;
-        }
-
-        .login-page__left {
-            flex: 1 1 0;
-            min-width: 0;
-            min-height: 100vh;
-            background: url("{% static 'images/login.png' %}") center center / cover no-repeat;
-            background-color: #f8f6f8;
+            flex-direction: column;
+            justify-content: center;
+            gap: clamp(6px, 1vh, 12px);
             position: relative;
+            overflow: hidden;
+            border-right: 1px solid rgba(229, 57, 53, 0.08);
+            min-height: 0;
         }
-        .login-page__left::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to right, rgba(255,255,255,0.2) 0%, transparent 40%);
-            pointer-events: none;
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: clamp(4px, 1.2vh, 14px);
         }
-
-        .login-page__right {
-            flex: 0 0 auto;
-            width: 420px;
-            max-width: 100%;
+        .login-brand img { width: 40px; height: 40px; object-fit: contain; }
+        .login-brand strong {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .login-brand span {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-self: flex-start;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #fff;
+            color: var(--red);
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-bottom: 2px;
+            box-shadow: 0 3px 10px rgba(229, 57, 53, 0.1);
+        }
+        .login-hero h1 {
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 2px;
+        }
+        .login-hero .lead {
+            font-size: 0.84rem;
+            color: var(--muted);
+            max-width: 38ch;
+            margin-bottom: 4px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .hero-benefits {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .hero-benefits li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .check {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 1.5px solid var(--red); color: var(--red);
+            background: #fff; display: grid; place-items: center; flex-shrink: 0;
+        }
+        .check svg { width: 10px; height: 10px; }
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 0;
+            max-width: 400px;
+        }
+        .hero-stat {
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(229,57,53,0.12);
+            border-radius: 12px;
+            padding: 8px 10px;
+        }
+        .hero-stat strong {
+            display: block;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--red);
+        }
+        .hero-stat span {
+            font-size: 0.64rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .hero-art {
+            max-width: clamp(140px, 18vh, 200px);
+            margin-top: 2px;
+            flex-shrink: 1;
+            min-height: 0;
+        }
+        .hero-art svg { width: 100%; height: auto; max-height: 16vh; }
+        .hero-tagline {
+            font-family: Caveat, cursive;
+            font-size: clamp(1.2rem, 2.2vh, 1.5rem);
+            color: var(--red);
+            font-weight: 700;
+            margin-top: 0;
+        }
+        .login-panel {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            background:white;
+            padding: clamp(16px, 2.5vh, 24px) 20px;
+            background: var(--white);
+            min-height: 0;
+            overflow: hidden;
         }
-
-        @keyframes cardSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         .login-card {
             width: 100%;
-            max-width: 340px;
+            max-width: 380px;
             background: #fff;
             border-radius: 14px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 0 1px rgba(192, 57, 43, 0.1);
-            border: 1px solid rgba(192, 57, 43, 0.15);
-            padding: 24px 26px;
-            animation: cardSlideUp 0.5s ease-out forwards;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--line);
+            padding: clamp(16px, 2.5vh, 22px) 22px;
         }
-
         .login-card__title {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #2d2a4a;
-            margin-bottom: 4px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--navy);
             letter-spacing: -0.02em;
-            text-align: center;
+            margin-bottom: 2px;
         }
-
         .login-card__subtitle {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-bottom: 18px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-weight: 500;
         }
-
-        .login-form .form-group { margin-bottom: 12px; }
+        .login-form .form-group { margin-bottom: 10px; }
         .login-form label {
             display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 5px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 4px;
         }
-
         .input-wrap { position: relative; }
         .input-wrap .input-icon {
             position: absolute;
-            left: 12px;
+            left: 11px;
             top: 50%;
             transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
+            width: 15px;
+            height: 15px;
             pointer-events: none;
-            color: #c0392b;
+            color: #94A3B8;
         }
         .input-wrap .input-icon svg { width: 100%; height: 100%; }
         .input-wrap .toggle-pwd {
             position: absolute;
-            right: 10px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             cursor: pointer;
             padding: 4px;
-            color: #6b7280;
+            color: var(--muted);
         }
-        .input-wrap .toggle-pwd:hover { color: #c0392b; }
-
+        .input-wrap .toggle-pwd:hover { color: var(--red); }
         .login-form input[type="text"],
         .login-form input[type="password"] {
             width: 100%;
-            padding: 9px 40px 9px 38px;
-            font-size: 0.85rem;
+            height: var(--ctrl-h);
+            padding: 0 40px 0 36px;
+            font-size: 0.84rem;
             font-family: inherit;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            background: #fff;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: #FAFBFC;
+            color: var(--navy);
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
         .login-form input:focus {
             outline: none;
-            border-color: #c0392b;
+            border-color: var(--red);
             background: #fff;
-            box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.2);
+            box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
         }
-        .login-form input::placeholder {
-            color: #9ca3af;
-            font-size: 0.75rem;
-        }
-
+        .login-form input::placeholder { color: #94A3B8; }
         .login-form .btn-login {
             width: 100%;
-            padding: 10px;
+            height: var(--ctrl-h);
             margin-top: 4px;
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.86rem;
+            font-weight: 700;
             font-family: inherit;
             color: #fff;
-            background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 10px;
+            background: linear-gradient(180deg, var(--red), var(--red-dark));
+            border: 0;
+            border-radius: var(--radius);
             cursor: pointer;
-            transition: transform 0.12s, box-shadow 0.2s;
-            box-shadow: 0 3px 12px rgba(192, 57, 43, 0.35);
+            box-shadow: 0 6px 14px rgba(229, 57, 53, 0.26);
         }
-        .login-form .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(192, 57, 43, 0.4);
-        }
-
+        .login-form .btn-login:hover { filter: brightness(1.03); }
         .login-alert {
-            padding: 9px 12px;
+            padding: 8px 10px;
             border-radius: 10px;
-            margin-bottom: 14px;
-            font-size: 0.75rem;
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+            margin-bottom: 10px;
+            font-size: 0.76rem;
+            background: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
         }
         .login-alert--success {
-            background: #f0fdf4;
-            color: #166534;
-            border-color: #bbf7d0;
+            background: #ECFDF5;
+            color: #065F46;
+            border-color: #A7F3D0;
         }
-
-        .login-footer {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 0.65rem;
-            color: #9ca3af;
-        }
-
         .btn-google-login {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             width: 100%;
-            padding: 9px;
-            margin-bottom: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            height: var(--ctrl-h);
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
             font-family: inherit;
-            color: #374151;
+            color: #334155;
             background: #fff;
-            border: 1px solid #dadce0;
-            border-radius: 10px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
             text-decoration: none;
             cursor: pointer;
-            transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
         .btn-google-login:hover {
-            background: #f8fafc;
-            border-color: #c0392b;
-            color: #c0392b;
+            background: #F8FAFC;
+            border-color: #FECACA;
+            color: var(--red);
         }
         .login-or {
             text-align: center;
-            margin: 0 0 12px 0;
-            font-size: 0.7rem;
-            color: #9ca3af;
+            margin: 0 0 10px;
+            font-size: 0.66rem;
+            color: #94A3B8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
-
-        @media (max-width: 900px) {
-            .login-page { flex-direction: column; }
-            .login-page__left { min-height: 220px; }
-            .login-page__left::after { background: linear-gradient(to bottom, rgba(255,255,255,0.5) 0%, transparent 70%); }
-            .login-page__right { max-width: 100%; padding: 20px; }
-            .login-card { max-width: 100%; padding: 20px 22px; }
+        .login-footer {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.74rem;
+            color: var(--muted);
+        }
+        .login-footer a {
+            color: var(--red);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .login-footer a:hover { text-decoration: underline; }
+        @media (max-height: 780px) {
+            .hero-art { display: none; }
+            .hero-tagline { display: none; }
+            .login-hero .lead { display: none; }
+            .login-brand img { width: 36px; height: 36px; }
+        }
+        @media (max-height: 680px) {
+            .hero-stats { display: none; }
+            .hero-benefits { gap: 4px; }
+            .login-card { padding: 14px 18px; }
+        }
+        @media (max-width: 960px) {
+            html, body { height: auto; overflow: auto; }
+            .login-page {
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                grid-template-columns: 1fr;
+                overflow: visible;
+            }
+            .login-hero {
+                padding: 20px 18px 14px;
+                border-right: 0;
+                border-bottom: 1px solid rgba(229,57,53,0.08);
+            }
+            .login-brand { margin-bottom: 10px; }
+            .login-hero h1 { font-size: 1.5rem; }
+            .hero-art, .hero-tagline { display: none; }
+            .hero-stats { max-width: 100%; }
+            .login-panel { padding: 18px 16px 24px; overflow: visible; }
+            .login-card {
+                max-width: 100%;
+                box-shadow: none;
+                border: 0;
+                padding: 8px 0 0;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero-stats { grid-template-columns: 1fr; }
+            .login-hero .lead { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="login-page">
-        <div class="login-page__left" role="img" aria-label="Blood donation"></div>
-        <div class="login-page__right">
+        <aside class="login-hero">
+            <div class="login-brand">
+                <img src="{% static 'images/blood450_logo.png' %}" alt="Blood 450">
+                <div>
+                    <strong>Blood 450</strong>
+                    <span>Donors Today. Brighter Tomorrows.</span>
+                </div>
+            </div>
+            <span class="hero-badge">WELCOME BACK</span>
+            <h1>Donate Blood.<br>Save Lives.</h1>
+            <p class="lead">Sign in to respond to nearby requests, track your impact, and stay ready for emergencies.</p>
+            <ul class="hero-benefits">
+                <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span> Match with nearby emergencies</li>
+                <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span> Track donations and eligibility</li>
+                <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span> Secure, hospital-trusted platform</li>
+            </ul>
+            <div class="hero-stats">
+                <div class="hero-stat"><strong>24/7</strong><span>Emergency matching</span></div>
+                <div class="hero-stat"><strong>Fast</strong><span>Donor response</span></div>
+                <div class="hero-stat"><strong>Safe</strong><span>Verified community</span></div>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <svg viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M40 40c0-7 5-12 12-12 4 0 8 2 10 5 2-3 6-5 10-5 7 0 12 5 12 12 0 14-22 24-22 24S40 54 40 40z" fill="#E53935" opacity="0.35"/>
+                    <path d="M120 28c0 0 42 46 42 78a42 42 0 1 1-84 0c0-32 42-78 42-78z" fill="#E53935"/>
+                    <path d="M120 40c0 0 30 34 30 58a30 30 0 1 1-60 0c0-24 30-58 30-58z" fill="#EF5350"/>
+                    <path d="M106 98c0-7 5-12 11-12 3 0 6 2 9 5 3-3 6-5 9-5 6 0 11 5 11 12 0 13-20 22-20 22s-20-9-20-22z" fill="#fff"/>
+                    <path d="M48 150c10-22 30-36 52-38 6-1 11 4 10 10l-6 24c-2 6-8 10-14 8-12-3-24 1-30 10-3 5-10 5-13 0-4-6-2-10 1-14z" fill="#F9A8A8"/>
+                    <path d="M192 150c-10-22-30-36-52-38-6-1-11 4-10 10l6 24c2 6 8 10 14 8 12-3 24 1 30 10 3 5 10 5 13 0 4-6 2-10-1-14z" fill="#F9A8A8"/>
+                </svg>
+            </div>
+            <p class="hero-tagline">Give Blood. Give Hope.</p>
+        </aside>
+
+        <div class="login-panel">
             <div class="login-card">
-                <h1 class="login-card__title text-center">Blood 450</h1>
+                <h1 class="login-card__title">Welcome back</h1>
+                <p class="login-card__subtitle">Sign in to continue to your Blood 450 dashboard.</p>
 
                 {% if request.GET.registered %}
                     <div class="login-alert login-alert--success" role="status">Registration complete. Sign in with your username and password to go to your dashboard.</div>
@@ -249,14 +419,14 @@
                     <div class="login-alert" role="alert">Invalid username or password. Please try again.</div>
                 {% endif %}
 
-              
                 {% if google_oauth_configured %}
                 <a href="{% url 'google_login' %}" class="btn-google-login">
                     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     Sign in with Google
                 </a>
-                <p class="login-or">— or sign in with username —</p>
+                <p class="login-or">or sign in with username</p>
                 {% endif %}
+
                 <form method="post" action="{% url 'login' %}" class="login-form">
                     {% csrf_token %}
                     <div class="form-group">
@@ -282,12 +452,12 @@
                         </div>
                     </div>
                     <input type="hidden" name="next" value="{{ next }}">
-                    <button type="submit" class="btn-login">Login</button>
+                    <button type="submit" class="btn-login">Sign in</button>
                 </form>
-                <p class="login-footer" style="margin-top: 12px;">
-                    <a href="{% url 'donor_register' %}" style="color: #c0392b; font-weight: 600;">Register</a> as a donor
+                <p class="login-footer">
+                    New donor? <a href="{% url 'donor_register' %}">Create an account</a>
                 </p>
-                <p class="login-footer">© 2026 Blood Donation System</p>
+                <p class="login-footer" style="margin-top:8px;font-size:0.7rem;">© 2026 Blood 450</p>
             </div>
         </div>
     </div>

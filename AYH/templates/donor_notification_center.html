@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Blood 450{% endblock %}
+{% block page_heading %}Notifications{% endblock %}
+{% block page_subheading %}Stay updated with blood requests and responses.{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .notif-page { max-width: 860px; margin: 0 auto; }
+  .notif-toolbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .notif-toolbar h2 { margin: 0; font-size: 1.05rem; font-weight: 800; color: #102A56; }
+  .notif-toolbar .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-sm {
+    height: 34px; padding: 0 12px; border-radius: 9px; font-size: 0.76rem; font-weight: 700;
+    cursor: pointer; border: 1px solid #E2E8F0; background: #fff; color: #334155;
+  }
+  .btn-sm.primary { background: #E53935; border-color: #E53935; color: #fff; }
+  .notif-list { display: flex; flex-direction: column; gap: 10px; }
+  .notif-item {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: start;
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px;
+    position: relative; transition: border-color .15s, background .15s;
+  }
+  .notif-item.unread {
+    background: #FFF7F7; border-color: #FECACA;
+  }
+  .notif-item.unread::before {
+    content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+    background: #E53935; border-radius: 0 3px 3px 0;
+  }
+  .notif-icon {
+    width: 40px; height: 40px; border-radius: 10px; background: #FFF1F2; color: #E53935;
+    display: grid; place-items: center;
+  }
+  .notif-icon svg { width: 18px; height: 18px; }
+  .notif-title { margin: 0 0 2px; font-size: 0.88rem; font-weight: 800; color: #102A56; }
+  .notif-item.unread .notif-title { color: #991B1B; }
+  .notif-msg { margin: 0 0 6px; font-size: 0.8rem; color: #64748B; line-height: 1.4; }
+  .notif-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip {
+    display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+    background: #F1F5F9; color: #475569;
+  }
+  .chip.bg { background: #FEE2E2; color: #C62828; }
+  .chip.urgent { background: #FEF2F2; color: #B91C1C; }
+  .chip.time { background: transparent; color: #94A3B8; padding-left: 0; }
+  .notif-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .btn-view {
+    height: 32px; padding: 0 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 700;
+    background: #E53935; color: #fff; border: 0; text-decoration: none; display: inline-flex;
+    align-items: center; justify-content: center; white-space: nowrap;
+  }
+  .empty {
+    text-align: center; padding: 40px 16px; background: #fff; border: 1px solid #E2E8F0; border-radius: 14px;
+    color: #64748B;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notif-page">
+  <div class="notif-toolbar">
+    <h2>Inbox {% if unread_count %}<span style="color:#E53935;font-size:0.85rem;">({{ unread_count }} unread)</span>{% endif %}</h2>
+    <div class="actions">
+      <button type="button" class="btn-sm primary" id="btnMarkAllRead">Mark all as read</button>
+      <button type="button" class="btn-sm" id="btnClearRead">Clear read</button>
+    </div>
+  </div>
+
+  {% if notifications %}
+  <div class="notif-list" id="notifList">
+    {% for n in notifications %}
+    <article class="notif-item {% if not n.is_read %}unread{% endif %}" data-id="{{ n.id }}" id="inbox-{{ n.id }}">
+      <div class="notif-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div>
+        <h3 class="notif-title">{{ n.blood_request.blood_group }} blood needed — {{ n.blood_request.get_urgency_display }}</h3>
+        <p class="notif-msg">
+          {{ n.blood_request.units_needed }} unit(s) requested
+          {% if n.location_label %} at {{ n.location_label }}{% elif n.hospital_name %} at {{ n.hospital_name }}{% endif %}.
+          {% if n.blood_request.note %} {{ n.blood_request.note|truncatechars:80 }}{% endif %}
+        </p>
+        <div class="notif-meta">
+          <span class="chip bg">{{ n.blood_request.blood_group }}</span>
+          {% if n.blood_request.urgency == 'critical' %}<span class="chip urgent">Critical</span>{% endif %}
+          {% if n.distance_km != None %}<span class="chip">{{ n.distance_km }} km</span>{% endif %}
+          {% if n.has_responded %}<span class="chip">{{ n.response_status|title }}</span>{% else %}<span class="chip">Pending</span>{% endif %}
+          <span class="chip time">{{ n.created_at|timesince }} ago</span>
+        </div>
+      </div>
+      <div class="notif-actions">
+        <a class="btn-view" href="{% url 'donor_notifications' %}#notification-{{ n.blood_request.id }}" data-mark="{{ n.id }}">View Request</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <h3 style="margin:0 0 6px;color:#102A56;">No notifications yet</h3>
+    <p style="margin:0;">When nearby requests match your blood group, they’ll show up here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie('csrftoken');
+
+  function updateBadges(count) {
+    var b = document.getElementById('donorNotifBadge');
+    if (b) { b.textContent = count; b.style.display = count > 0 ? 'flex' : 'none'; }
+    var sb = document.getElementById('sidebarNotifBadge');
+    if (sb) { sb.textContent = count > 0 ? String(count) : ''; sb.setAttribute('data-count', String(count)); }
+  }
+
+  function markRead(payload) {
+    return fetch('{% url "api_donor_mark_notifications_read" %}', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); });
+  }
+
+  document.querySelectorAll('[data-mark]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var id = parseInt(a.getAttribute('data-mark'), 10);
+      markRead({ notification_id: id }).then(function (d) {
+        if (d.status === 'ok') {
+          var item = document.getElementById('inbox-' + id);
+          if (item) item.classList.remove('unread');
+          updateBadges(d.unread_count || 0);
+        }
+      }).catch(function () {});
+    });
+  });
+
+  var markAll = document.getElementById('btnMarkAllRead');
+  if (markAll) {
+    markAll.addEventListener('click', function () {
+      markRead({ mark_all: true }).then(function (d) {
+        if (d.status === 'ok') {
+          document.querySelectorAll('.notif-item.unread').forEach(function (el) { el.classList.remove('unread'); });
+          updateBadges(0);
+        }
+      });
+    });
+  }
+
+  var clearRead = document.getElementById('btnClearRead');
+  if (clearRead) {
+    clearRead.addEventListener('click', function () {
+      fetch('{% url "api_donor_clear_read_notifications" %}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: '{}'
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.status === 'ok') {
+          document.querySelectorAll('.notif-item:not(.unread)').forEach(function (el) { el.remove(); });
+          updateBadges(d.unread_count || 0);
+        }
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

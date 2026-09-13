@@ -36,6 +36,11 @@ urlpatterns = [
     
     # Donor pages
     path('notifications/', views.donor_notifications, name='donor_notifications'),
+    path('donor/notifications/', views.donor_notification_center, name='donor_notification_center'),
+    path('donor/profile/', views.donor_profile, name='donor_profile'),
+    path('donor/profile/edit/', views.donor_profile_edit, name='donor_profile_edit'),
+    path('donor/settings/', views.donor_settings, name='donor_settings'),
+    path('donor/history/', views.donor_donation_history, name='donor_donation_history'),
     
     # API endpoints
     path('update-location/', views.donor_update_location, name='donor_update_location'),
@@ -45,6 +50,8 @@ urlpatterns = [
     # Real-time poll APIs
     path('api/donor/poll/', views.api_donor_poll, name='api_donor_poll'),
     path('api/donor/notification-count/', views.api_donor_notification_count, name='api_donor_notification_count'),
+    path('api/donor/notifications/mark-read/', views.api_donor_mark_notifications_read, name='api_donor_mark_notifications_read'),
+    path('api/donor/notifications/clear-read/', views.api_donor_clear_read_notifications, name='api_donor_clear_read_notifications'),
     path('api/admin/notifications/', views.api_admin_notifications, name='api_admin_notifications'),
     path('api/admin/delays-unresolved-count/', views.api_admin_unresolved_delay_count, name='api_admin_unresolved_delay_count'),
     path('api/admin/request/<int:request_id>/delays/', views.api_admin_request_delays, name='api_admin_request_delays'),

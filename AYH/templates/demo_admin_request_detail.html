@@ -1,175 +1,361 @@
 {% extends 'base.html' %}
 
 {% block title %}Blood Request Details - Admin{% endblock %}
+{% block page_heading %}Request Details{% endblock %}
+{% block page_subheading %}Donor response & timeline{% endblock %}
 
 {% block extra_styles %}
 <style>
     .detail-container {
-        max-width: 900px;
+        max-width: 960px;
         margin: 0 auto;
     }
-    
-    .detail-container h2 {
-        color: #2c3e50;
-        margin-bottom: 30px;
-        text-align: center;
-    }
-    
-    .request-info {
-        background: #f8f9fa;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-    }
-    
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-    }
-    
-    .info-item {
-        padding: 15px;
-        background: white;
-        border-radius: 5px;
-        border-left: 4px solid #667eea;
-    }
-    
-    .info-item label {
-        display: block;
-        font-size: 12px;
-        color: #777;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
-    
-    .info-item .value {
-        font-size: 18px;
+
+    .back-link {
+        margin-bottom: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #E53935;
         font-weight: 600;
-        color: #2c3e50;
+        text-decoration: none;
+        font-size: 14px;
     }
-    
+
+    .back-link:hover {
+        color: #C62828;
+        text-decoration: underline;
+    }
+
+    .detail-hero {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 20px;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(16, 42, 86, 0.08));
+        padding: 22px 24px;
+        margin-bottom: 18px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .detail-hero::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #E53935, #C62828);
+    }
+
+    .blood-group-visual {
+        width: 88px;
+        height: 88px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #FFF1F2, #FFE4E6);
+        border: 1px solid #FFE4E6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .blood-group-visual .bg-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #C62828;
+        margin-bottom: 2px;
+    }
+
+    .blood-group-visual .bg-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #E53935;
+        letter-spacing: -0.03em;
+        line-height: 1;
+    }
+
+    .detail-hero-meta h2 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #102A56;
+        letter-spacing: -0.02em;
+    }
+
+    .detail-hero-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .meta-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #F8FAFC;
+        color: #102A56;
+        border: 1px solid #E2E8F0;
+    }
+
     .badge {
         display: inline-block;
         padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: bold;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
     }
-    
+
     .badge-critical {
-        background: #e74c3c;
-        color: white;
+        background: #FFF1F2;
+        color: #E53935;
+        border: 1px solid #FFE4E6;
     }
-    
+
     .badge-high {
-        background: #f39c12;
-        color: white;
+        background: #fff7ed;
+        color: #ea580c;
+        border: 1px solid #ffedd5;
     }
-    
+
     .badge-medium {
-        background: #3498db;
-        color: white;
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #dbeafe;
     }
-    
+
+    .request-info {
+        background: #fff;
+        padding: 22px 24px;
+        border-radius: 16px;
+        margin-bottom: 18px;
+        border: 1px solid #E2E8F0;
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(16, 42, 86, 0.08));
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+    }
+
+    .info-item {
+        padding: 14px 16px;
+        background: #F8FAFC;
+        border-radius: 12px;
+        border-left: 3px solid #E53935;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 11px;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .info-item .value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #102A56;
+    }
+
+    .note-block,
+    .location-block {
+        margin-top: 16px;
+        padding: 14px 16px;
+        background: #F8FAFC;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .location-block {
+        border-left: 3px solid #059669;
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+
+    .note-block label,
+    .location-block label {
+        display: block;
+        font-size: 11px;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .note-block div,
+    .location-block div {
+        color: #102A56;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .info-box-detail {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        background: #FFF1F2;
+        border-left: 4px solid #E53935;
+        border-radius: 0 12px 12px 0;
+        font-size: 14px;
+        color: #334155;
+        line-height: 1.5;
+    }
+
+    .info-box-detail a {
+        color: #E53935;
+        font-weight: 600;
+    }
+
     .section {
-        margin-bottom: 30px;
+        margin-bottom: 22px;
     }
-    
+
     .section h3 {
-        color: #2c3e50;
-        margin-bottom: 20px;
+        color: #102A56;
+        margin: 0 0 14px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid #FFF1F2;
+        font-size: 17px;
+        font-weight: 750;
     }
-    
+
     .stats {
         display: flex;
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 14px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
     }
-    
+
     .stat-card {
         flex: 1;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-width: 140px;
+        background: linear-gradient(135deg, #E53935, #C62828);
         color: white;
         padding: 20px;
-        border-radius: 10px;
+        border-radius: 16px;
         text-align: center;
+        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.28);
     }
-    
+
+    .stat-card:nth-child(2) {
+        background: linear-gradient(135deg, #102A56, #1e3a5f);
+        box-shadow: 0 8px 20px rgba(16, 42, 86, 0.22);
+    }
+
     .stat-card .number {
         font-size: 36px;
-        font-weight: bold;
-        margin-bottom: 5px;
+        font-weight: 800;
+        margin-bottom: 4px;
+        letter-spacing: -0.02em;
     }
-    
+
     .stat-card .label {
-        font-size: 14px;
-        opacity: 0.9;
+        font-size: 13px;
+        opacity: 0.92;
+        font-weight: 600;
     }
-    
+
     .donors-table {
         width: 100%;
         border-collapse: collapse;
         background: white;
-        border-radius: 5px;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(16, 42, 86, 0.08));
+        border: 1px solid #E2E8F0;
     }
-    
+
     .donors-table thead {
-        background: #2c3e50;
+        background: #102A56;
         color: white;
     }
-    
+
     .donors-table th,
     .donors-table td {
-        padding: 15px;
+        padding: 14px 16px;
         text-align: left;
+        font-size: 14px;
     }
-    
+
+    .donors-table th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+    }
+
     .donors-table tbody tr:nth-child(even) {
-        background: #f8f9fa;
+        background: #F8FAFC;
     }
-    
+
     .donors-table tbody tr:hover {
-        background: #e9ecef;
+        background: #FFF1F2;
     }
-    
+
+    .donors-table .badge {
+        background: #FFF1F2;
+        color: #E53935;
+        border: 1px solid #FFE4E6;
+    }
+
     .no-data {
         text-align: center;
         padding: 40px;
-        color: #777;
-        font-style: italic;
-    }
-    
-    .back-link {
-        margin-bottom: 20px;
-        display: inline-block;
+        color: #64748B;
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
     }
 
-    .info-box-detail {
-        margin-bottom: 24px;
-        padding: 14px 16px;
-        background: #e8f4fd;
-        border-left: 4px solid #3498db;
-        border-radius: 4px;
-        font-size: 14px;
-        color: #2c3e50;
-    }
-    .info-box-detail a {
-        color: #2980b9;
+    @media (max-width: 640px) {
+        .detail-hero {
+            grid-template-columns: 1fr;
+            text-align: center;
+            justify-items: center;
+        }
+
+        .detail-hero-chips {
+            justify-content: center;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="detail-container">
-    <a href="{% url 'admin_create_request' %}" class="back-link btn">← Create Another Request</a>
-    
-    <h2>Blood Request Details</h2>
-    
+    <a href="{% url 'admin_create_request' %}" class="back-link">← Create Another Request</a>
+
+    <div class="detail-hero">
+        <div class="blood-group-visual">
+            <span class="bg-label">Blood</span>
+            <span class="bg-value">{{ blood_request.blood_group }}</span>
+        </div>
+        <div class="detail-hero-meta">
+            <h2>Request #{{ blood_request.id }}{% if blood_request.request_id %} · {{ blood_request.request_id }}{% endif %}</h2>
+            <div class="detail-hero-chips">
+                <span class="badge badge-{{ blood_request.urgency }}">{{ blood_request.get_urgency_display }}</span>
+                <span class="meta-chip">{{ blood_request.get_status_display|default:blood_request.status }}</span>
+                <span class="meta-chip">{{ blood_request.units_needed }} unit{{ blood_request.units_needed|pluralize }}</span>
+            </div>
+        </div>
+    </div>
+
     <div class="request-info">
         <div class="info-grid">
             <div class="info-item">
@@ -227,18 +413,18 @@
             </div>
             {% endif %}
         </div>
-        
+
         {% if blood_request.note %}
-        <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px;">
-            <label style="display: block; font-size: 12px; color: #777; text-transform: uppercase; margin-bottom: 5px;">Notes</label>
-            <div style="color: #2c3e50;">{{ blood_request.note }}</div>
+        <div class="note-block">
+            <label>Notes</label>
+            <div>{{ blood_request.note }}</div>
         </div>
         {% endif %}
 
         {% if blood_request.location_name or blood_request.req_lat %}
-        <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 5px; border-left: 4px solid #27ae60;">
-            <label style="display: block; font-size: 12px; color: #777; text-transform: uppercase; margin-bottom: 5px;">Request location (distance-based matching)</label>
-            <div style="color: #2c3e50;">
+        <div class="location-block">
+            <label>Request location (distance-based matching)</label>
+            <div>
                 {% if blood_request.location_name %}<strong>{{ blood_request.location_name }}</strong><br>{% endif %}
                 {% if blood_request.req_lat and blood_request.req_lng %}
                 {{ blood_request.req_lat }}, {{ blood_request.req_lng }} — within <strong>{{ blood_request.radius_km }} km</strong>
@@ -251,24 +437,24 @@
     <div class="info-box-detail">
         <strong>How donors respond:</strong> Notified donors see this request in the <a href="{% url 'donor_notifications' %}">Notifications page</a> or in the mobile app. They can tap <strong>Accept & Donate</strong> or <strong>Can't Donate</strong>. Accepted donors appear below.
     </div>
-    
+
     <div class="section">
         <div class="stats">
             <div class="stat-card">
                 <div class="number">{{ notified_count }}</div>
                 <div class="label">Donors Notified</div>
             </div>
-            
+
             <div class="stat-card">
                 <div class="number">{{ accepted_responses|length }}</div>
                 <div class="label">Donors Accepted</div>
             </div>
         </div>
     </div>
-    
+
     <div class="section">
         <h3>Accepted Donors</h3>
-        
+
         {% if accepted_responses %}
             <table class="donors-table">
                 <thead>
@@ -285,7 +471,7 @@
                         <tr>
                             <td><strong>{{ item.response.donor.username }}</strong></td>
                             <td>{{ item.response.donor.donor_profile.phone }}</td>
-                            <td><span class="badge" style="background: #27ae60;">{{ item.response.donor.donor_profile.blood_group }}</span></td>
+                            <td><span class="badge">{{ item.response.donor.donor_profile.blood_group }}</span></td>
                             <td>{% if item.distance_km != None %}{{ item.distance_km }} km{% else %}—{% endif %}</td>
                             <td>{{ item.response.responded_at|date:"M d, Y H:i" }}</td>
                         </tr>

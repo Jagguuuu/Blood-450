@@ -18,8 +18,12 @@ def admin_notifications(request):
 
 
 def donor_notification_count(request):
-    """Add donor pending notification count for donor users (for bell icon in navbar)."""
+    """Unread donor notification count for bell / sidebar badge (initial SSR)."""
     if not getattr(request, 'user', None) or not request.user.is_authenticated or request.user.is_staff:
         return {'donor_notification_count': 0}
-    # Keep initial render lightweight; JS will fetch live count.
-    return {'donor_notification_count': 0}
+    try:
+        from .models import Notification
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+    except Exception:
+        count = 0
+    return {'donor_notification_count': count}

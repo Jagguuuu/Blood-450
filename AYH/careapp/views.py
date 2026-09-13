@@ -33,7 +33,7 @@ from .models import (
     RadiusExpansionLog, BloodBankMaster, HospitalMaster, HospitalMetrics, DimCity,
     RequestDonorPoolAssignment, DonorOTP,
 )
-from .forms import DonorRegistrationForm, DonorLoginForm
+from .forms import DonorRegistrationForm, DonorLoginForm, DonorProfileEditForm
 from .utils import haversine_km, donor_has_location
 
 logger = logging.getLogger(__name__)
@@ -860,6 +860,89 @@ def admin_add_city(request):
 ELIGIBILITY_DAYS = 90
 
 
+def _hospital_name_map(hospital_ids):
+    ids = [hid for hid in hospital_ids if hid]
+    if not ids:
+        return {}
+    return {
+        h.hospital_id: h.hospital_name
+        for h in HospitalMaster.objects.filter(hospital_id__in=ids)
+    }
+
+
+def _enrich_notification(notification, donor_profile=None, hospital_map=None):
+    """Attach display helpers used by donor dashboard/notification templates."""
+    br = notification.blood_request
+    hospital_map = hospital_map or {}
+    hospital_name = ''
+    if br.hospital_id and br.hospital_id in hospital_map:
+        hospital_name = hospital_map[br.hospital_id]
+    elif br.location_name:
+        hospital_name = br.location_name
+    elif br.hospital_id:
+        hospital_name = br.hospital_id
+    else:
+        hospital_name = 'Hospital'
+
+    distance_km = None
+    if (
+        donor_profile
+        and donor_has_location(donor_profile)
+        and br.req_lat is not None
+        and br.req_lng is not None
+    ):
+        try:
+            distance_km = round(haversine_km(
+                float(donor_profile.last_lat), float(donor_profile.last_lng),
+                float(br.req_lat), float(br.req_lng),
+            ), 1)
+        except Exception:
+            distance_km = None
+
+    notification.hospital_name = hospital_name
+    notification.distance_km = distance_km
+    notification.location_label = ', '.join(
+        p for p in [hospital_name, br.city or getattr(donor_profile, 'city', '') or ''] if p
+    )
+    return notification
+
+
+def _build_recent_activity(user, donor_profile, user_profile, responses, notifications):
+    """Synthesize a simple activity timeline from existing records (no Activity model)."""
+    items = []
+    if user_profile and getattr(user_profile, 'updated_at', None):
+        items.append({
+            'title': 'Profile Updated',
+            'message': 'You updated your profile information',
+            'at': user_profile.updated_at,
+            'kind': 'profile',
+        })
+    for r in responses[:5]:
+        items.append({
+            'title': 'Explored Request' if r.response == 'rejected' else 'Accepted Request',
+            'message': (
+                f"Responded {r.response} to a {r.blood_request.blood_group} request"
+            ),
+            'at': r.responded_at,
+            'kind': 'response',
+        })
+    for n in notifications[:3]:
+        items.append({
+            'title': 'New Blood Request',
+            'message': f"{n.blood_request.blood_group} request nearby",
+            'at': n.created_at,
+            'kind': 'notification',
+        })
+    items.append({
+        'title': 'Account Created',
+        'message': 'Welcome to Blood 450!',
+        'at': user.date_joined,
+        'kind': 'account',
+    })
+    items.sort(key=lambda x: x['at'] or timezone.now(), reverse=True)
+    return items[:8]
+
+
 def _donor_dashboard_metrics(request_user):
     """Compute donation-based metrics for donor dashboard (like Flutter)."""
     accepted_responses = DonorResponse.objects.filter(
@@ -868,7 +951,7 @@ def _donor_dashboard_metrics(request_user):
     
     now = timezone.now()
     donations = [
-        {'date': r.responded_at, 'urgency': r.blood_request.urgency}
+        {'date': r.responded_at, 'urgency': r.blood_request.urgency, 'response': r}
         for r in accepted_responses
     ]
     
@@ -921,6 +1004,18 @@ def _donor_dashboard_metrics(request_user):
         'labels': ['Emergency', 'Hospital', 'Other'],
         'data': [by_type.get('critical', 0), by_type.get('high', 0), by_type.get('medium', 0)],
     }
+    donation_history = []
+    for d in reversed(donations[-10:]):
+        r = d['response']
+        br = r.blood_request
+        donation_history.append({
+            'date': r.responded_at,
+            'blood_group': br.blood_group,
+            'units': br.units_needed,
+            'hospital': br.location_name or br.hospital_id or br.city or '—',
+            'status': 'Completed',
+            'urgency': br.urgency,
+        })
     return {
         'this_month_count': this_month,
         'last_donation_date': last_donation_date,
@@ -933,18 +1028,27 @@ def _donor_dashboard_metrics(request_user):
         'chart_by_type_pie': chart_by_type_pie,
         'streak': streak,
         'badges': badges,
+        'donation_history': donation_history,
+        'emergency_responses': by_type.get('critical', 0),
     }
 
 
 @login_required
 def donor_notifications(request):
     """Donor page to view their notifications and blood requests (dashboard like Flutter)."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
     try:
         donor_profile = DonorProfile.objects.get(user=request.user)
         has_profile = True
     except DonorProfile.DoesNotExist:
         has_profile = False
         donor_profile = None
+
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        user_profile = None
     
     notifications = Notification.objects.filter(
         user=request.user
@@ -953,7 +1057,13 @@ def donor_notifications(request):
     responses_map = dict(
         DonorResponse.objects.filter(donor=request.user).values_list('blood_request_id', 'response')
     )
+    recent_responses = list(
+        DonorResponse.objects.filter(donor=request.user)
+        .select_related('blood_request')
+        .order_by('-responded_at')[:10]
+    )
     
+    hospital_map = _hospital_name_map([n.blood_request.hospital_id for n in notifications])
     notifications_with_status = []
     accepted_count = 0
     rejected_count = 0
@@ -966,29 +1076,45 @@ def donor_notifications(request):
                 accepted_count += 1
             else:
                 rejected_count += 1
+        _enrich_notification(notification, donor_profile, hospital_map)
         notifications_with_status.append(notification)
     
     total_notifications = len(notifications_with_status)
     pending_count = total_notifications - accepted_count - rejected_count
+    unread_count = sum(1 for n in notifications_with_status if not n.is_read)
     
     metrics = _donor_dashboard_metrics(request.user)
     
     responded_list = [n for n in notifications_with_status if n.has_responded]
+    nearby_requests = [n for n in notifications_with_status if not n.has_responded][:8]
+    emergency_request = next(
+        (n for n in nearby_requests if n.blood_request.urgency == 'critical'),
+        nearby_requests[0] if nearby_requests else None,
+    )
     resolved_delays = DelayReason.objects.filter(
         reported_by=request.user, resolved=True
     ).select_related('request').order_by('-resolved_at')[:20]
+
+    recent_activity = _build_recent_activity(
+        request.user, donor_profile, user_profile, recent_responses, notifications_with_status
+    )
     
     context = {
         'notifications': notifications_with_status,
+        'nearby_requests': nearby_requests,
+        'emergency_request': emergency_request,
         'responded_list': responded_list,
         'resolved_delays': resolved_delays,
+        'recent_activity': recent_activity,
         'user': request.user,
         'has_profile': has_profile,
         'donor_profile': donor_profile,
+        'user_profile': user_profile,
         'total_notifications': total_notifications,
         'pending_count': pending_count,
         'accepted_count': accepted_count,
         'rejected_count': rejected_count,
+        'unread_count': unread_count,
         'this_month_count': metrics['this_month_count'],
         'last_donation_date': metrics['last_donation_date'],
         'lifetime_count': metrics['lifetime_count'],
@@ -1000,8 +1126,189 @@ def donor_notifications(request):
         'chart_by_type_pie': metrics['chart_by_type_pie'],
         'streak': metrics['streak'],
         'badges': metrics['badges'],
+        'donation_history': metrics['donation_history'],
+        'emergency_responses': metrics['emergency_responses'],
+        'lives_helped': metrics['lifetime_count'] * 3,
     }
     return render(request, 'demo_donor_notifications.html', context)
+
+
+@login_required
+def donor_notification_center(request):
+    """Dedicated notifications inbox for donors."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+    try:
+        donor_profile = DonorProfile.objects.get(user=request.user)
+    except DonorProfile.DoesNotExist:
+        donor_profile = None
+
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).select_related('blood_request').order_by('-created_at')[:100]
+    responses_map = dict(
+        DonorResponse.objects.filter(donor=request.user).values_list('blood_request_id', 'response')
+    )
+    hospital_map = _hospital_name_map([n.blood_request.hospital_id for n in notifications])
+    items = []
+    for n in notifications:
+        status = responses_map.get(n.blood_request_id)
+        n.has_responded = status is not None
+        n.response_status = status
+        _enrich_notification(n, donor_profile, hospital_map)
+        items.append(n)
+
+    unread_count = sum(1 for n in items if not n.is_read)
+    return render(request, 'donor_notification_center.html', {
+        'notifications': items,
+        'unread_count': unread_count,
+        'donor_profile': donor_profile,
+    })
+
+
+@login_required
+def donor_profile(request):
+    """View donor profile details."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+    try:
+        donor_profile = DonorProfile.objects.get(user=request.user)
+    except DonorProfile.DoesNotExist:
+        donor_profile = None
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        user_profile = None
+    metrics = _donor_dashboard_metrics(request.user)
+    return render(request, 'donor_profile.html', {
+        'donor_profile': donor_profile,
+        'user_profile': user_profile,
+        'last_donation_date': metrics['last_donation_date'],
+        'lifetime_count': metrics['lifetime_count'],
+        'days_until_eligible': metrics['days_until_eligible'],
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def donor_profile_edit(request):
+    """Edit donor profile (User + DonorProfile + UserProfile)."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+    donor_profile, _ = DonorProfile.objects.get_or_create(user=request.user)
+    user_profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    initial = {
+        'first_name': request.user.first_name or '',
+        'last_name': request.user.last_name or '',
+        'phone': donor_profile.phone or '',
+        'date_of_birth': user_profile.date_of_birth,
+        'gender': user_profile.gender or '',
+        'blood_group': donor_profile.blood_group or '',
+        'address': user_profile.area or '',
+        'city': donor_profile.city or user_profile.city or '',
+        'state': user_profile.state or '',
+        'pincode': user_profile.pincode or '',
+    }
+
+    if request.method == 'POST':
+        form = DonorProfileEditForm(request.POST, request.FILES)
+        if form.is_valid():
+            data = form.cleaned_data
+            request.user.first_name = data.get('first_name') or ''
+            request.user.last_name = data.get('last_name') or ''
+            request.user.save(update_fields=['first_name', 'last_name'])
+
+            donor_profile.phone = data.get('phone') or donor_profile.phone
+            if data.get('blood_group'):
+                donor_profile.blood_group = data['blood_group']
+            donor_profile.city = data.get('city') or ''
+            donor_profile.save()
+
+            user_profile.date_of_birth = data.get('date_of_birth')
+            user_profile.gender = data.get('gender') or None
+            user_profile.area = data.get('address') or ''
+            user_profile.city = data.get('city') or ''
+            user_profile.state = data.get('state') or ''
+            user_profile.pincode = data.get('pincode') or ''
+            if data.get('profile_photo'):
+                user_profile.profile_photo = data['profile_photo']
+            user_profile.save()
+
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('donor_profile')
+        messages.error(request, 'Please fix the errors below.')
+    else:
+        form = DonorProfileEditForm(initial=initial)
+
+    return render(request, 'donor_profile_edit.html', {
+        'form': form,
+        'donor_profile': donor_profile,
+        'user_profile': user_profile,
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def donor_settings(request):
+    """Simple donor settings: availability toggle."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+    donor_profile, _ = DonorProfile.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        available = request.POST.get('is_available') == 'on'
+        donor_profile.is_available = available
+        donor_profile.availability_status = 'Available' if available else 'Busy'
+        donor_profile.save(update_fields=['is_available', 'availability_status'])
+        messages.success(request, 'Settings saved.')
+        return redirect('donor_settings')
+    return render(request, 'donor_settings.html', {'donor_profile': donor_profile})
+
+
+@login_required
+def donor_donation_history(request):
+    """Donation history list for donor."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+    metrics = _donor_dashboard_metrics(request.user)
+    return render(request, 'donor_donation_history.html', {
+        'donation_history': metrics['donation_history'],
+        'lifetime_count': metrics['lifetime_count'],
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_donor_mark_notifications_read(request):
+    """Mark one or all donor notifications as read."""
+    if request.user.is_staff:
+        return JsonResponse({'error': 'For donors only'}, status=403)
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        data = {}
+    qs = Notification.objects.filter(user=request.user, is_read=False)
+    notif_id = data.get('notification_id')
+    mark_all = data.get('mark_all')
+    if mark_all:
+        updated = qs.update(is_read=True)
+    elif notif_id:
+        updated = qs.filter(id=notif_id).update(is_read=True)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'notification_id or mark_all required'}, status=400)
+    unread = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'status': 'ok', 'updated': updated, 'unread_count': unread})
+
+
+@login_required
+@require_http_methods(["POST"])
+def api_donor_clear_read_notifications(request):
+    """Delete read notifications for the current donor."""
+    if request.user.is_staff:
+        return JsonResponse({'error': 'For donors only'}, status=403)
+    deleted, _ = Notification.objects.filter(user=request.user, is_read=True).delete()
+    unread = Notification.objects.filter(user=request.user, is_read=False).count()
+    return JsonResponse({'status': 'ok', 'deleted': deleted, 'unread_count': unread})
 
 
 @login_required
@@ -1229,14 +1536,15 @@ def api_admin_notifications(request):
 @login_required
 @require_http_methods(["GET"])
 def api_donor_notification_count(request):
-    """JSON: pending donor notification count for navbar badge."""
+    """JSON: unread donor notification count for navbar/sidebar badge."""
     if request.user.is_staff:
         return JsonResponse({'error': 'For donors only'}, status=403)
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
     responded_ids = DonorResponse.objects.filter(donor=request.user).values_list('blood_request_id', flat=True)
     pending_count = Notification.objects.filter(user=request.user).exclude(
         blood_request_id__in=responded_ids
     ).count()
-    return JsonResponse({'count': pending_count})
+    return JsonResponse({'count': unread_count, 'unread_count': unread_count, 'pending_count': pending_count})
 
 
 @login_required
