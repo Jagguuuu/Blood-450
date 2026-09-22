@@ -1693,6 +1693,33 @@ def _request_hostname(host):
     return host.split(":")[0]
 
 
+def _is_local_host(url_or_host):
+    value = (url_or_host or "").strip().lower()
+    hostname = _request_hostname(value.replace("https://", "").replace("http://", ""))
+    return hostname in ("localhost", "127.0.0.1", "::1", "0.0.0.0", "")
+
+
+def _public_origin(request):
+    """HTTPS origin of the site the user actually opened (never localhost on Vercel)."""
+    xf_host = (request.META.get("HTTP_X_FORWARDED_HOST") or "").split(",")[0].strip()
+    host = xf_host or (request.get_host() or "").strip()
+    on_vercel = bool(os.environ.get("VERCEL"))
+    if not host or _is_dead_or_stale_vercel_host(host):
+        return None
+    if on_vercel and _is_local_host(host):
+        return None
+    hostname = _request_hostname(host)
+    xf_proto = (request.META.get("HTTP_X_FORWARDED_PROTO") or "").split(",")[0].strip()
+    force_https = bool(
+        on_vercel
+        or hostname.endswith(".vercel.app")
+        or xf_proto == "https"
+        or request.is_secure()
+    )
+    scheme = "https" if force_https else (request.scheme or "http")
+    return f"{scheme}://{host}".rstrip("/")
+
+
 def _google_oauth_redirect_uri(request=None):
     """
     Build Google OAuth callback from the LIVE host the user is on.
@@ -1700,48 +1727,47 @@ def _google_oauth_redirect_uri(request=None):
     Google requires an exact match including scheme, host, port, and trailing slash.
     Do not strip :8000 from localhost / 127.0.0.1 — that causes redirect_uri_mismatch
     (and used to surface in the UI as a failed Google sign-in).
+    On Vercel, never send localhost even if env / WSGI Host is wrong.
     """
-    # 1) Prefer the browser host the user actually opened (always live).
-    if request is not None:
-        host = (request.get_host() or "").strip().lower()
-        hostname = _request_hostname(host)
-        if host and not _is_dead_or_stale_vercel_host(host):
-            uri = request.build_absolute_uri("/register/google/callback/")
-            force_https = bool(
-                os.environ.get("VERCEL")
-                or hostname.endswith(".vercel.app")
-                or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
-                or request.is_secure()
-            )
-            if force_https and uri.startswith("http://"):
-                uri = "https://" + uri[len("http://") :]
-            return _normalize_redirect_uri(uri)
+    on_vercel = bool(os.environ.get("VERCEL"))
 
-    # 2) Env only if it is not the dead alias.
+    # 1) Prefer the browser host the user actually opened.
+    if request is not None:
+        origin = _public_origin(request)
+        if origin:
+            return _normalize_redirect_uri(f"{origin}/register/google/callback/")
+
+    # 2) Env only if it is a real public URL (not localhost on Vercel).
     configured = _normalize_redirect_uri(
         getattr(django_settings, "GOOGLE_REDIRECT_URI", None)
     )
     if (
         configured.startswith(("http://", "https://"))
         and not _is_dead_or_stale_vercel_host(configured)
+        and not (on_vercel and _is_local_host(configured))
     ):
         return configured
 
     base = (getattr(django_settings, "APP_BASE_URL", None) or "").strip().rstrip("/")
     if (
         base.startswith(("http://", "https://"))
-        and "localhost" not in base
         and not _is_dead_or_stale_vercel_host(base)
+        and not (on_vercel and _is_local_host(base))
+        and not (on_vercel and "localhost" in base)
     ):
-        return f"{base}/register/google/callback/"
+        return _normalize_redirect_uri(f"{base}/register/google/callback/")
 
-    if request is not None:
+    if on_vercel:
+        prod = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip().rstrip("/")
+        deploy = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+        host = prod or deploy
+        if host:
+            if not host.startswith(("http://", "https://")):
+                host = f"https://{host}"
+            return _normalize_redirect_uri(f"{host.rstrip('/')}/register/google/callback/")
+
+    if request is not None and not on_vercel:
         uri = request.build_absolute_uri("/register/google/callback/")
-        if uri.startswith("http://") and (
-            os.environ.get("VERCEL")
-            or request.META.get("HTTP_X_FORWARDED_PROTO") == "https"
-        ):
-            uri = "https://" + uri[len("http://") :]
         return _normalize_redirect_uri(uri)
 
     return ""
