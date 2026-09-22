@@ -26,7 +26,6 @@ from datetime import timedelta
 
 from django.contrib.auth.views import LoginView
 
-from .excel_analytics import read_excel_to_dataframe, build_charts_and_summary
 from .models import (
     BloodRequest, DonorProfile, UserProfile, Notification, DonorResponse,
     AdminNotification, RequestTimeline, EtaTracking, DelayReason, DonorAssignment, FallbackAction,
@@ -2371,6 +2370,7 @@ def excel_analytics_upload(request):
 @require_http_methods(["GET"])
 def excel_analytics_dashboard(request):
     """Power BI-style dashboard: charts and summary from last uploaded Excel."""
+    from .excel_analytics import read_excel_to_dataframe, build_charts_and_summary
     path = request.session.get('excel_analytics_path')
     if not path or not os.path.isfile(path):
         messages.info(request, 'Upload an Excel file to see analytics and charts.')
@@ -2402,8 +2402,15 @@ def excel_analytics_dashboard(request):
 @require_http_methods(["GET"])
 def excel_analytics_live(request):
     """Power BI-style dashboard with data from backend (BloodRequest + DonorProfile). No file upload."""
-    import pandas as pd
+    from .excel_analytics import build_charts_and_summary, _ensure_analytics_deps
     from django.utils import timezone
+
+    try:
+        _ensure_analytics_deps()
+        import pandas as pd
+    except ImportError as e:
+        messages.error(request, str(e))
+        return redirect('excel_analytics_upload')
 
     # Build DataFrame from Django models (same shape as export)
     requests_qs = BloodRequest.objects.all().order_by('-created_at')[:5000]

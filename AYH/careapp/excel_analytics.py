@@ -2,25 +2,47 @@
 
 import io
 import logging
-from typing import Optional
-
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
+
+pd = None
+px = None
+go = None
+make_subplots = None
+
+
+def _ensure_analytics_deps():
+    """Load pandas/plotly on first use so Django can start if NumPy is blocked."""
+    global pd, px, go, make_subplots
+    if pd is not None:
+        return
+    try:
+        import pandas as _pd
+        import plotly.express as _px
+        import plotly.graph_objects as _go
+        from plotly.subplots import make_subplots as _make_subplots
+    except Exception as exc:
+        raise ImportError(
+            'Excel analytics needs pandas and plotly. On this machine NumPy failed to load '
+            '(often Windows Application Control blocking a DLL, or Python 3.14). '
+            'Use the project venv (Python 3.11) or allow numpy.random._generator.dll.'
+        ) from exc
+    pd = _pd
+    px = _px
+    go = _go
+    make_subplots = _make_subplots
 
 ALLOWED_EXTENSIONS = ('.xlsx', '.xls')
 MAX_ROWS = 50_000
 MAX_COLUMNS = 50
 
 
-def _is_numeric(series: pd.Series) -> bool:
+def _is_numeric(series: Any) -> bool:
     return pd.api.types.is_numeric_dtype(series) and series.notna().any()
 
 
-def _is_categorical(series: pd.Series, max_unique=50) -> bool:
+def _is_categorical(series: Any, max_unique=50) -> bool:
     if series.dtype == object or str(series.dtype) == 'category':
         return series.nunique() <= max_unique
     if pd.api.types.is_numeric_dtype(series):
@@ -34,11 +56,12 @@ def _safe_name(s):
     return str(s).strip() or '(unnamed)'
 
 
-def build_charts_and_summary(df: pd.DataFrame) -> dict:
+def build_charts_and_summary(df: Any) -> dict:
     """
     Build Plotly chart HTML and summary stats from a DataFrame.
     Returns dict: charts=[{title, html}], summary_table=[...], row_count, column_count, error.
     """
+    _ensure_analytics_deps()
     out = {
         'charts': [],
         'summary_table': [],
@@ -213,8 +236,9 @@ def build_charts_and_summary(df: pd.DataFrame) -> dict:
     return out
 
 
-def read_excel_to_dataframe(file_or_path) -> pd.DataFrame:
+def read_excel_to_dataframe(file_or_path) -> Any:
     """Read first sheet of Excel file (file object or path) into DataFrame."""
+    _ensure_analytics_deps()
     path_or_file = file_or_path
     name = ''
     if hasattr(path_or_file, 'read'):
