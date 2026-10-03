@@ -527,3 +527,11 @@ PASSWORD_RESET_SITE_NAME = config("PASSWORD_RESET_SITE_NAME", default="Blood450"
 # ==============================================================================
 
 DEFAULT_RADIUS_KM = 10
+# AWS EC2 temporary HTTP configuration
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(_csrf_origins + ["http://65.2.20.185"]))
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
+# Temporary HTTP deployment setting
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"

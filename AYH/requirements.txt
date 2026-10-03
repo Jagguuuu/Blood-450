@@ -9,13 +9,13 @@ djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
 
 # PostgreSQL (for production / Vercel)
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 dj-database-url==2.2.0
 
 # Additional utilities
 python-decouple==3.8  # For environment variables
 requests>=2.28.0  # Google OAuth token exchange
-Pillow==10.1.0  # For image handling (if needed later)
+Pillow==11.1.0  # For image handling (if needed later)
 twilio>=8.0.0  # Optional: for sending OTP SMS (set TWILIO_* in settings/env)
 
 # Production server (optional)
