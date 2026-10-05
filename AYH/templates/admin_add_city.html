@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Add City - Admin{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .form-container { max-width: 520px; margin: 0 auto; }
+    .form-container h2 { color: #1f2937; margin-bottom: 24px; font-size: 22px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 6px; color: #374151; font-weight: 600; font-size: 14px; }
+    .form-group input { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 15px; }
+    .form-group input:focus { outline: none; border-color: #dc2626; box-shadow: 0 0 0 2px rgba(220,38,38,0.1); }
+    .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .btn-save { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-save:hover { opacity: 0.95; }
+    .btn-back { display: inline-block; padding: 12px 24px; background: #f3f4f6; color: #374151; text-decoration: none; border-radius: 8px; font-weight: 600; }
+    .btn-back:hover { background: #e5e7eb; color: #1f2937; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Add City</h2>
+    <p style="color: #6b7280; margin-bottom: 20px;">Data is saved to the backend and will appear on the dashboard and in the Cities list.</p>
+
+    <form method="post" action="">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="city">City *</label>
+            <input type="text" id="city" name="city" required placeholder="e.g. Hyderabad">
+        </div>
+        <div class="form-group">
+            <label for="state">State *</label>
+            <input type="text" id="state" name="state" required placeholder="e.g. Telangana">
+        </div>
+        <div class="form-group">
+            <label for="region">Region</label>
+            <input type="text" id="region" name="region" placeholder="e.g. South">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Save City</button>
+            <a href="{% url 'admin_dashboard' %}" class="btn-back">← Dashboard</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

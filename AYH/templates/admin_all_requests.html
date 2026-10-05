@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}All Blood Requests - Admin{% endblock %}
+{% block page_heading %}All Requests{% endblock %}
+{% block page_subheading %}Manage blood donation requests{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<style>
+/* BLOOD 450 — ALL REQUESTS / MINIMAL UI */
+
+.all-requests-page{width:100%;max-width:1280px;margin:0 auto}
+.all-requests-page .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 4px 18px rgba(15,23,42,.045);overflow:hidden}
+
+/* Search + filters: single clean row on desktop */
+.all-requests-page .card-toolbar{
+    display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;
+    padding:14px 16px;background:#fff;border-bottom:1px solid #e5e7eb;
+}
+.all-requests-page .toolbar-search{flex:1 1 auto;min-width:260px;margin:0}
+.all-requests-page .toolbar-search input{
+    display:block;width:100%;height:42px;box-sizing:border-box;padding:0 14px 0 40px;
+    border:1px solid #dfe3e8;border-radius:9px;background-color:#fff;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:13px center;background-size:18px;
+    color:#1e293b;font-family:inherit;font-size:14px;font-weight:400;outline:none;
+    transition:border-color .15s ease,box-shadow .15s ease;
+}
+.all-requests-page .toolbar-search input::placeholder{color:#94a3b8}
+.all-requests-page .toolbar-search input:focus{border-color:#cbd5e1;box-shadow:0 0 0 3px rgba(148,163,184,.12)}
+
+.all-requests-page .toolbar-dates{
+    display:flex;align-items:center;gap:8px;flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;
+}
+.all-requests-page .toolbar-dates label{margin:0 2px;color:#64748b;font-size:13px;font-weight:500}
+.all-requests-page .toolbar-dates input[type=date]{
+    width:145px;height:42px;box-sizing:border-box;padding:0 10px;
+    border:1px solid #dfe3e8;border-radius:9px;background:#fff;color:#1e293b;
+    font-family:inherit;font-size:13px;outline:none;
+}
+.all-requests-page .toolbar-dates input[type=date]:focus{border-color:#cbd5e1;box-shadow:0 0 0 3px rgba(148,163,184,.12)}
+
+.all-requests-page .btn-filter,.all-requests-page .btn-clear-dates{
+    height:42px;box-sizing:border-box;border-radius:9px;padding:0 15px;
+    font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .15s ease;
+}
+.all-requests-page .btn-filter{border:1px solid #dc2626;background:#dc2626;color:#fff;box-shadow:none}
+.all-requests-page .btn-filter:hover{background:#b91c1c;border-color:#b91c1c}
+.all-requests-page .btn-clear-dates{border:1px solid #dfe3e8;background:#fff;color:#334155}
+.all-requests-page .btn-clear-dates:hover{background:#f8fafc;border-color:#cbd5e1}
+.all-requests-page .btn-filter:active,.all-requests-page .btn-clear-dates:active{transform:translateY(1px)}
+
+/* Table with clear borders */
+.all-requests-page .dataTables-wrapper-inner{width:100%;overflow-x:auto;padding:0 16px;box-sizing:border-box}
+.all-requests-page #requestsDataTable{
+    width:100%!important;margin:0!important;border-collapse:separate!important;border-spacing:0;
+    border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;
+}
+.all-requests-page #requestsDataTable thead th{
+    background:#f8fafc!important;color:#475569;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.045em;padding:13px 14px;
+    border:0!important;border-bottom:1px solid #e5e7eb!important;white-space:nowrap;
+}
+.all-requests-page #requestsDataTable thead th+th{border-left:1px solid #eef0f2!important}
+.all-requests-page #requestsDataTable tbody td{
+    padding:14px;vertical-align:middle;background:#fff;color:#334155;font-size:14px;
+    font-weight:400;border:0!important;border-bottom:1px solid #edf0f2!important;
+}
+.all-requests-page #requestsDataTable tbody td+td{border-left:1px solid #f0f2f4!important}
+.all-requests-page #requestsDataTable tbody tr:last-child td{border-bottom:0!important}
+.all-requests-page #requestsDataTable tbody tr:hover td{background:#fafafa!important}
+.all-requests-page #requestsDataTable tbody td:first-child{color:#0f172a;font-weight:600}
+.all-requests-page #requestsDataTable th:nth-child(7),
+.all-requests-page #requestsDataTable td:nth-child(7),
+.all-requests-page #requestsDataTable th:nth-child(8),
+.all-requests-page #requestsDataTable td:nth-child(8){white-space:nowrap}
+
+/* Badges */
+.all-requests-page .status-badge,.all-requests-page .urgency-badge{
+    display:inline-flex;align-items:center;min-height:27px;box-sizing:border-box;
+    padding:3px 9px;border-radius:7px;font-size:12px;font-weight:600;line-height:1;
+}
+.all-requests-page .status-open{background:#eff6ff;color:#2563eb}
+.all-requests-page .status-fulfilled{background:#ecfdf5;color:#047857}
+.all-requests-page .status-failed{background:#fef2f2;color:#dc2626}
+.all-requests-page .status-cancelled{background:#f1f5f9;color:#64748b}
+.all-requests-page .urgency-critical{background:#fef2f2;color:#dc2626}
+.all-requests-page .urgency-high{background:#fff7ed;color:#c2410c}
+.all-requests-page .urgency-medium{background:#eff6ff;color:#2563eb}
+
+/* Action buttons */
+.all-requests-page .actions-cell{white-space:nowrap}
+.all-requests-page .btn-icon{
+    display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;
+    padding:0;margin:0 4px 0 0;border:1px solid transparent;border-radius:8px;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,color .15s ease;
+}
+.all-requests-page .btn-icon:hover{transform:none}
+.all-requests-page .btn-icon.edit{background:#eff6ff;color:#2563eb;border-color:#dbeafe}
+.all-requests-page .btn-icon.edit:hover{background:#dbeafe;color:#1d4ed8}
+.all-requests-page .btn-icon.delete{background:#fef2f2;color:#dc2626;border-color:#fee2e2}
+.all-requests-page .btn-icon.delete:hover{background:#fee2e2;color:#b91c1c}
+.all-requests-page .btn-icon svg{width:17px;height:17px}
+
+/* DataTables footer */
+.all-requests-page .dataTables_wrapper{padding:12px 16px 14px}
+.all-requests-page .dataTables_length,.all-requests-page .dataTables_info,.all-requests-page .dataTables_paginate{font-size:13px;color:#64748b}
+.all-requests-page .dataTables_length select{
+    min-width:52px;height:34px;margin:0 4px;padding:0 7px;border:1px solid #dfe3e8;
+    border-radius:8px;background:#fff;color:#334155;font-family:inherit;outline:none;
+}
+.all-requests-page .dataTables_info{padding-top:10px}
+.all-requests-page .dataTables_paginate{padding-top:6px}
+.all-requests-page .dataTables_paginate .paginate_button{
+    min-width:34px;height:34px;box-sizing:border-box;display:inline-flex!important;
+    align-items:center;justify-content:center;padding:0 9px!important;margin:0 2px!important;
+    border:1px solid transparent!important;border-radius:8px!important;
+    color:#475569!important;background:transparent!important;font-size:13px;
+}
+.all-requests-page .dataTables_paginate .paginate_button:hover{
+    background:#f8fafc!important;border-color:#e5e7eb!important;color:#0f172a!important;
+}
+.all-requests-page .dataTables_paginate .paginate_button.current{
+    background:#dc2626!important;border-color:#dc2626!important;color:#fff!important;
+}
+.all-requests-page .dataTables_paginate .paginate_button.current:hover{
+    background:#dc2626!important;border-color:#dc2626!important;color:#fff!important;
+}
+.all-requests-page .dataTables_paginate .paginate_button.disabled{opacity:.45}
+.all-requests-page .dataTables_filter{display:none!important}
+
+/* Empty state */
+.all-requests-page .no-data{text-align:center;padding:56px 24px;color:#64748b}
+.all-requests-page .no-data h3{margin:0 0 7px;color:#0f172a;font-size:18px}
+.all-requests-page .no-data p{margin:0;font-size:14px}
+.all-requests-page .no-data a{color:#dc2626;font-weight:600}
+.all-requests-page .no-data-icon{font-size:42px;margin-bottom:10px;opacity:.55}
+
+/* Existing modals — minimal matching style */
+.modal-overlay,.edit-modal-overlay{
+    position:fixed;inset:0;background:rgba(15,23,42,.42);display:none;
+    align-items:center;justify-content:center;z-index:9999;
+}
+.modal-overlay.show,.edit-modal-overlay.show{display:flex}
+.modal-box{
+    width:90%;max-width:400px;padding:24px;background:#fff;border:1px solid #e5e7eb;
+    border-top:3px solid #dc2626;border-radius:12px;box-shadow:0 20px 50px rgba(15,23,42,.16);
+}
+.modal-box h3{margin:0 0 10px;color:#0f172a;font-size:18px}
+.modal-box p{margin:0 0 20px;color:#64748b;font-size:14px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.modal-actions button{min-height:38px;padding:0 15px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.modal-cancel{background:#fff;color:#334155;border:1px solid #dfe3e8!important}
+.modal-cancel:hover{background:#f8fafc}
+.modal-confirm-delete{background:#dc2626;color:#fff;border:1px solid #dc2626}
+.modal-confirm-delete:hover{background:#b91c1c}
+
+.edit-modal-box{
+    width:95%;max-width:620px;max-height:90vh;display:flex;flex-direction:column;
+    background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+    box-shadow:0 20px 50px rgba(15,23,42,.16);overflow:hidden;
+}
+.edit-modal-header{
+    display:flex;justify-content:space-between;align-items:center;padding:15px 18px;
+    background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;
+}
+.edit-modal-header h3{margin:0;color:#0f172a;font-size:17px}
+.edit-modal-close{padding:0 4px;border:0;background:none;color:#64748b;font-size:24px;line-height:1;cursor:pointer}
+.edit-modal-close:hover{color:#dc2626}
+.edit-modal-body{padding:20px;overflow-y:auto;flex:1;min-height:0}
+.edit-form-fragment .form-group{margin-bottom:15px}
+.edit-form-fragment .form-group label{display:block;margin-bottom:6px;color:#334155;font-size:13px;font-weight:600}
+.edit-form-fragment .form-group input,.edit-form-fragment .form-group select,.edit-form-fragment .form-group textarea{
+    width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #dfe3e8;border-radius:8px;
+    background:#fff;color:#0f172a;font-family:inherit;font-size:14px;
+}
+.edit-form-fragment .form-group input:focus,.edit-form-fragment .form-group select:focus,.edit-form-fragment .form-group textarea:focus{
+    outline:none;border-color:#cbd5e1;box-shadow:0 0 0 3px rgba(148,163,184,.12);
+}
+.edit-form-fragment .form-group textarea{min-height:80px;resize:vertical}
+.edit-form-fragment .form-row{display:flex;gap:12px}
+.edit-form-fragment .form-row .half{flex:1}
+.edit-form-fragment .form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+.edit-form-fragment .location-section{margin-top:16px;padding:14px;background:#fafafa;border:1px solid #e5e7eb;border-radius:9px}
+.edit-form-fragment .location-fields{margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb}
+.edit-form-fragment .radius-extension-box{
+    margin-top:12px;padding:11px 12px;background:#fffbeb;border:1px solid #fde68a;
+    border-left:3px solid #f59e0b;border-radius:7px;color:#92400e;font-size:13px;
+}
+.edit-form-title{margin:0 0 16px;color:#0f172a;font-size:18px}
+body .messages{display:none!important}
+#toast-container>.toast-success,.toast-success{background-color:#16a34a!important}
+#toast-container>.toast-success:hover,.toast-success:hover{background-color:#15803d!important}
+
+/* Responsive: keep desktop one-row, stack neatly on smaller screens */
+@media (max-width:1100px){
+    .all-requests-page .card-toolbar{flex-wrap:wrap}
+    .all-requests-page .toolbar-search{min-width:100%;flex-basis:100%}
+    .all-requests-page .toolbar-dates{width:100%;justify-content:flex-start}
+}
+@media (max-width:700px){
+    .all-requests-page .card-toolbar{padding:12px;gap:8px}
+    .all-requests-page .toolbar-dates{
+        display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);
+        width:100%;gap:7px;
+    }
+    .all-requests-page .toolbar-dates input[type=date]{width:100%}
+    .all-requests-page .btn-filter,.all-requests-page .btn-clear-dates{width:100%}
+    .all-requests-page .btn-filter{grid-column:1/3}
+    .all-requests-page .btn-clear-dates{grid-column:3/5}
+    .all-requests-page .dataTables-wrapper-inner{padding:0 12px}
+    .all-requests-page .dataTables_wrapper{padding:10px 12px 12px}
+    .all-requests-page #requestsDataTable{min-width:760px}
+    .edit-form-fragment .form-row{flex-direction:column;gap:0}
+}
+@media (max-width:430px){
+    .all-requests-page .toolbar-dates{grid-template-columns:1fr 1fr}
+    .all-requests-page .toolbar-dates label{display:none}
+    .all-requests-page .btn-filter,.all-requests-page .btn-clear-dates{grid-column:auto}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="all-requests-page">
+    {% if blood_requests %}
+    <div class="card">
+        <div class="card-toolbar">
+            <div class="toolbar-search">
+                <input type="text" id="toolbarSearch" placeholder="Search by ID, blood group, status, urgency..." aria-label="Search">
+            </div>
+            <div class="toolbar-dates">
+                <label>From</label>
+                <input type="date" id="dateFrom" aria-label="Date from">
+                <label>To</label>
+                <input type="date" id="dateTo" aria-label="Date to">
+                <button type="button" class="btn-filter" id="btnDateFilter">Filter</button>
+                <button type="button" class="btn-clear-dates" id="btnClearDates">Clear dates</button>
+            </div>
+        </div>
+        <div class="dataTables-wrapper-inner">
+            <table id="requestsDataTable" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Blood Group</th>
+                        <th>Urgency</th>
+                        <th>Status</th>
+                        <th>Units</th>
+                        <th>Notified</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in blood_requests %}
+                    <tr>
+                        <td>{{ req.id }}</td>
+                        <td><strong>{{ req.blood_group }}</strong></td>
+                        <td><span class="urgency-badge urgency-{{ req.urgency }}">{{ req.get_urgency_display }}</span></td>
+                        <td><span class="status-badge status-{{ req.status|default:'open' }}">{{ req.get_status_display|default:req.status|default:"Open" }}</span></td>
+                        <td>{{ req.units_needed }}</td>
+                        <td>{{ req.notifications.count }}</td>
+                        <td data-order="{{ req.created_at|date:'U' }}">{{ req.created_at|date:"M d, Y H:i" }}</td>
+                        <td class="actions-cell">
+                            <button type="button" class="btn-icon edit" data-edit-url="{% url 'admin_edit_request' req.id %}?modal=1" onclick="openEditModal(this)" title="Edit" aria-label="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                            <button type="button" class="btn-icon delete" data-delete-url="{% url 'admin_delete_request' req.id %}" onclick="openDeleteModal({{ req.id }}, '{{ req.blood_group|escapejs }}', this)" title="Delete" aria-label="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="no-data">
+            <div class="no-data-icon">ðŸ“‹</div>
+            <h3>No Blood Requests</h3>
+            <p><a href="{% url 'admin_create_request' %}">Create a blood request</a> to get started.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Edit modal -->
+<div id="editModal" class="edit-modal-overlay">
+    <div class="edit-modal-box">
+        <div class="edit-modal-header">
+            <h3>Edit Blood Request</h3>
+            <button type="button" class="edit-modal-close" onclick="closeEditModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="edit-modal-body" id="editModalBody">
+            <p style="color: #64748B;">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Delete blood request?</h3>
+        <p id="deleteModalText">Are you sure you want to delete this request? This cannot be undone.</p>
+        <form id="deleteForm" method="post" action="">
+            {% csrf_token %}
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="modal-confirm-delete">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+(function() {
+    // Show Django messages as toasts and hide the banner
+    (function showMessagesAsToasts() {
+        var messagesEl = document.querySelector('.messages');
+        if (!messagesEl) return;
+        var items = messagesEl.querySelectorAll('.message');
+        if (typeof toastr === 'undefined') return;
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: 'toast-top-right',
+            timeOut: 5000
+        };
+        items.forEach(function(el) {
+            var text = (el.textContent || el.innerText || '').trim();
+            if (!text) return;
+            var tag = (el.className || '').match(/\b(success|error|warning|info)\b/);
+            var type = tag ? tag[1] : 'info';
+            if (toastr[type]) toastr[type](text);
+            else toastr.info(text);
+        });
+        messagesEl.style.display = 'none';
+    })();
+
+    function openDeleteModal(requestId, bloodGroup, btn) {
+        var modal = document.getElementById('deleteModal');
+        var form = document.getElementById('deleteForm');
+        var text = document.getElementById('deleteModalText');
+        if (text) text.textContent = 'Are you sure you want to delete Request #' + requestId + (bloodGroup ? ' (' + bloodGroup + ')' : '') + '? This cannot be undone.';
+        form.action = btn && btn.getAttribute('data-delete-url') ? btn.getAttribute('data-delete-url') : '';
+        modal.classList.add('show');
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
+
+    function openEditModal(btn) {
+        var url = btn && btn.getAttribute('data-edit-url');
+        if (!url) return;
+        var overlay = document.getElementById('editModal');
+        var body = document.getElementById('editModalBody');
+        body.innerHTML = '<p style="color: #6b7280;">Loading...</p>';
+        overlay.classList.add('show');
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                body.innerHTML = html;
+                initEditForm(body);
+            })
+            .catch(function() {
+                body.innerHTML = '<p style="color: #dc2626;">Failed to load form. Try again.</p>';
+            });
+    }
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('show');
+    }
+    window.openEditModal = openEditModal;
+    window.closeEditModal = closeEditModal;
+    function initEditForm(container) {
+        var useLocation = container.querySelector('#use_location');
+        var locationFields = container.querySelector('#location-fields');
+        var citySelect = container.querySelector('#city_select');
+        var cityInput = container.querySelector('#city');
+        var stateInput = container.querySelector('#state');
+        var getLocationBtn = container.querySelector('#getLocationBtn');
+        if (useLocation && locationFields) {
+            useLocation.onchange = function() {
+                locationFields.style.display = this.checked ? 'block' : 'none';
+            };
+        }
+        if (citySelect && cityInput && stateInput) {
+            citySelect.onchange = function() {
+                var opt = this.options[this.selectedIndex];
+                if (opt && opt.value) {
+                    cityInput.value = opt.value;
+                    stateInput.value = opt.dataset.state || '';
+                }
+            };
+        }
+        if (getLocationBtn) {
+            getLocationBtn.onclick = function() {
+                var btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Getting location...';
+                if (!navigator.geolocation) {
+                    btn.disabled = false;
+                    btn.textContent = '≡ƒôì Get current coordinates';
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        var lat = container.querySelector('#req_lat');
+                        var lng = container.querySelector('#req_lng');
+                        if (lat) lat.value = pos.coords.latitude.toFixed(6);
+                        if (lng) lng.value = pos.coords.longitude.toFixed(6);
+                        btn.disabled = false;
+                        btn.textContent = '≡ƒôì Get current coordinates';
+                    },
+                    function() {
+                        btn.disabled = false;
+                        btn.textContent = '≡ƒôì Get current coordinates';
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            };
+        }
+        var cancelBtn = container.querySelector('.edit-modal-cancel');
+        if (cancelBtn) cancelBtn.onclick = closeEditModal;
+    }
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    // DataTables + toolbar search + date filter (JS only, no view changes)
+    var tableEl = document.getElementById('requestsDataTable');
+    if (tableEl && typeof jQuery !== 'undefined') {
+        var $ = jQuery;
+        var table = $('#requestsDataTable').DataTable({
+            order: [[6, 'desc']],
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            language: {
+                search: '',
+                searchPlaceholder: 'Search table...',
+                lengthMenu: 'Show _MENU_',
+                info: '_TOTAL_ request(s)',
+                infoEmpty: 'No requests',
+                infoFiltered: '(filtered from _MAX_)',
+                paginate: { first: 'First', last: 'Last', next: 'Next', previous: 'Prev' }
+            },
+            columnDefs: [
+                { orderable: false, targets: 7 },
+                { className: 'text-nowrap', targets: 7 }
+            ]
+        });
+
+        // Toolbar search (sync with DataTables search)
+        var toolbarSearch = document.getElementById('toolbarSearch');
+        if (toolbarSearch) {
+            toolbarSearch.addEventListener('keyup', function() {
+                table.search(this.value).draw();
+            });
+        }
+
+        // Date range filter (custom filter on Created column, index 6)
+        var dateFrom = document.getElementById('dateFrom');
+        var dateTo = document.getElementById('dateTo');
+        var btnDateFilter = document.getElementById('btnDateFilter');
+        var btnClearDates = document.getElementById('btnClearDates');
+
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            var from = dateFrom && dateFrom.value ? new Date(dateFrom.value).getTime() : null;
+            var to = dateTo && dateTo.value ? new Date(dateTo.value).getTime() + 86400000 - 1 : null;
+            var row = table.row(dataIndex).node();
+            var cell = row && row.cells && row.cells[6] ? row.cells[6] : (row ? row.querySelector('td[data-order]') : null);
+            var cellOrder = cell ? cell.getAttribute('data-order') : null;
+            if (!cellOrder) return true;
+            var rowDate = parseInt(cellOrder, 10) * 1000;
+            if (from && rowDate < from) return false;
+            if (to && rowDate > to) return false;
+            return true;
+        });
+
+        if (btnDateFilter) {
+            btnDateFilter.addEventListener('click', function() {
+                table.draw();
+            });
+        }
+        if (btnClearDates && dateFrom && dateTo) {
+            btnClearDates.addEventListener('click', function() {
+                dateFrom.value = '';
+                dateTo.value = '';
+                table.draw();
+            });
+        }
+
+        // Hide default DataTables filter (we use toolbar)
+        $('.dataTables_filter').hide();
+    }
+})();
+</script>
+{% endblock %}

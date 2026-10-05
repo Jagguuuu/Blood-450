@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Blood Request #{{ blood_request.id }} - Admin{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .form-container { max-width: 600px; margin: 0 auto; }
+    .form-container h2 { color: #2c3e50; margin-bottom: 30px; text-align: center; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none; border-color: #667eea;
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-actions { display: flex; gap: 10px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+    .location-section { margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .location-toggle .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500; color: #2c3e50; }
+    .location-toggle input[type="checkbox"] { width: auto; }
+    .location-fields { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
+    .form-row { display: flex; gap: 16px; }
+    .form-row .half { flex: 1; }
+    .radius-extension-box { margin-top: 16px; padding: 14px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; font-size: 14px; color: #92400e; }
+    .btn-back { display: inline-block; margin-bottom: 16px; color: #2563eb; text-decoration: none; font-weight: 500; }
+    .btn-back:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <a href="{% url 'admin_all_requests' %}" class="btn-back">← All Requests</a>
+    <h2>Edit Blood Request #{{ blood_request.id }}</h2>
+
+    <form method="post" action="">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="blood_group">Blood Group: *</label>
+            <select id="blood_group" name="blood_group" required>
+                {% for value, label in blood_groups %}
+                    <option value="{{ value }}" {% if blood_request.blood_group == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="units_needed">Units Needed: *</label>
+            <input type="number" id="units_needed" name="units_needed" min="1" value="{{ blood_request.units_needed|default:1 }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="urgency">Urgency Level: *</label>
+            <select id="urgency" name="urgency" required>
+                {% for value, label in urgency_levels %}
+                    <option value="{{ value }}" {% if blood_request.urgency == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="note">Additional Notes:</label>
+            <textarea id="note" name="note" placeholder="Enter any additional information...">{{ blood_request.note|default:'' }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group half">
+                <label for="hospital_id">Hospital (optional):</label>
+                <select id="hospital_id" name="hospital_id">
+                    <option value="">-- Select or leave blank --</option>
+                    {% for h in hospitals %}
+                    <option value="{{ h.hospital_id }}" {% if blood_request.hospital_id == h.hospital_id %}selected{% endif %}>{{ h.hospital_name }} ({{ h.hospital_id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group half">
+                <label for="source">Source:</label>
+                <select id="source" name="source">
+                    <option value="app" {% if blood_request.source == 'app' %}selected{% endif %}>App</option>
+                    <option value="call" {% if blood_request.source == 'call' %}selected{% endif %}>Call</option>
+                    <option value="hospital" {% if blood_request.source == 'hospital' %}selected{% endif %}>Hospital</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group half">
+                <label for="city">City (optional):</label>
+                <select id="city_select" name="city_select">
+                    <option value="">-- Select or type below --</option>
+                    {% for c in cities %}
+                    <option value="{{ c.city }}" data-state="{{ c.state }}" {% if blood_request.city == c.city and blood_request.state == c.state %}selected{% endif %}>{{ c.city }}, {{ c.state }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="city" name="city" placeholder="Or type city" value="{{ blood_request.city|default:'' }}" style="margin-top: 6px;">
+            </div>
+            <div class="form-group half">
+                <label for="state">State (optional):</label>
+                <input type="text" id="state" name="state" placeholder="e.g. Telangana" value="{{ blood_request.state|default:'' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="sla_minutes">SLA (minutes, optional):</label>
+            <input type="number" id="sla_minutes" name="sla_minutes" min="0" value="{{ blood_request.sla_minutes|default:'' }}" placeholder="Target fulfillment time in minutes">
+        </div>
+
+        <div class="form-group location-section">
+            <div class="location-toggle">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="use_location" name="use_location" value="on" {% if blood_request.req_lat and blood_request.req_lng %}checked{% endif %}>
+                    <span>Notify only donors within a radius (location-based matching)</span>
+                </label>
+            </div>
+            <div id="location-fields" class="location-fields" style="display: {% if blood_request.req_lat and blood_request.req_lng %}block{% else %}none{% endif %};">
+                <div class="form-group">
+                    <label for="location_name">Location name:</label>
+                    <input type="text" id="location_name" name="location_name" value="{{ blood_request.location_name|default:'' }}" placeholder="e.g. Kondapur Hospital">
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="req_lat">Latitude: *</label>
+                        <input type="text" id="req_lat" name="req_lat" value="{{ blood_request.req_lat|default:'' }}" placeholder="e.g. 17.4842" step="any">
+                    </div>
+                    <div class="form-group half">
+                        <label for="req_lng">Longitude: *</label>
+                        <input type="text" id="req_lng" name="req_lng" value="{{ blood_request.req_lng|default:'' }}" placeholder="e.g. 78.3894" step="any">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="button" id="getLocationBtn" style="padding: 10px 16px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">📍 Get current coordinates</button>
+                </div>
+                <div class="form-group">
+                    <label for="radius_km">Radius (km):</label>
+                    <input type="number" id="radius_km" name="radius_km" min="0.1" max="500" step="0.5" value="{{ blood_request.radius_km|default:5 }}" placeholder="5">
+                </div>
+                <div class="radius-extension-box">
+                    <label for="radius_extension"><strong>New radius extension (km):</strong></label>
+                    <p style="margin: 6px 0 8px 0; font-size: 13px;">If you want to <strong>increase</strong> the search radius, enter the new total radius in km here. Current radius: <strong>{{ blood_request.radius_km|default:5 }} km</strong>. Old and new values will be saved in the radius expansion log.</p>
+                    <input type="number" id="radius_extension" name="radius_extension" min="0" max="500" step="0.5" placeholder="e.g. 10 (leave blank to keep current)" style="max-width: 200px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'admin_all_requests' %}" style="padding: 10px 18px; background: #e5e7eb; color: #374151; border-radius: 8px; text-decoration: none; font-weight: 500;">Cancel</a>
+            <button type="submit" class="btn btn-success" style="padding: 10px 18px; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Save</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('use_location').addEventListener('change', function() {
+    document.getElementById('location-fields').style.display = this.checked ? 'block' : 'none';
+});
+document.getElementById('city_select').addEventListener('change', function() {
+    var opt = this.options[this.selectedIndex];
+    if (opt.value) {
+        document.getElementById('city').value = opt.value;
+        document.getElementById('state').value = opt.dataset.state || '';
+    }
+});
+document.getElementById('getLocationBtn').addEventListener('click', function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Getting location...';
+    if (!navigator.geolocation) {
+        btn.disabled = false;
+        btn.textContent = '📍 Get current coordinates';
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            document.getElementById('req_lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('req_lng').value = pos.coords.longitude.toFixed(6);
+            btn.disabled = false;
+            btn.textContent = '📍 Get current coordinates';
+        },
+        function() {
+            btn.disabled = false;
+            btn.textContent = '📍 Get current coordinates';
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+});
+</script>
+{% endblock %}

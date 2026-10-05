@@ -1,0 +1,529 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Blood Request - Admin{% endblock %}
+{% block page_heading %}Create Request{% endblock %}
+{% block page_subheading %}Notify matching donors{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .create-request-page {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+
+    .create-request-card {
+        background: #fff;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        box-shadow: var(--shadow-card, 0 12px 32px rgba(16, 42, 86, 0.08));
+        overflow: hidden;
+    }
+
+    .create-request-card::before {
+        content: "";
+        display: block;
+        height: 4px;
+        background: linear-gradient(90deg, #E53935, #C62828);
+    }
+
+    .form-section {
+        padding: 22px 24px;
+        border-bottom: 1px solid #F1F5F9;
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+    }
+
+    .form-section-title {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #102A56;
+        letter-spacing: -0.01em;
+    }
+
+    .form-section-sub {
+        margin: 0 0 18px;
+        font-size: 13px;
+        color: #64748B;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #102A56;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        height: 46px;
+        padding: 0 14px;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        font-size: 14px;
+        font-family: inherit;
+        color: #102A56;
+        background: #F8FAFC;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        box-sizing: border-box;
+    }
+
+    .form-group textarea {
+        height: auto;
+        min-height: 100px;
+        padding: 12px 14px;
+        resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #E53935;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12);
+    }
+
+    .form-group small,
+    .form-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #64748B;
+    }
+
+    .form-group small a,
+    .form-hint a {
+        color: #E53935;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .form-group small a:hover,
+    .form-hint a:hover {
+        text-decoration: underline;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 16px;
+    }
+
+    .form-row .half {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .city-manual-input {
+        margin-top: 8px;
+    }
+
+    .location-section {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    .location-toggle .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #102A56;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .location-toggle input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        accent-color: #E53935;
+    }
+
+    .location-fields {
+        margin-top: 16px;
+        padding: 16px;
+        background: #FFF1F2;
+        border: 1px solid #FFE4E6;
+        border-radius: 12px;
+    }
+
+    .btn-location {
+        padding: 12px 18px;
+        height: 46px;
+        background: #102A56;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        font-family: inherit;
+        transition: background 0.15s ease;
+    }
+
+    .btn-location:hover {
+        background: #0c1f40;
+    }
+
+    .btn-location:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+    .info-box {
+        margin: 0;
+        padding: 14px 16px;
+        background: #FFF1F2;
+        border-left: 4px solid #E53935;
+        border-radius: 0 12px 12px 0;
+        font-size: 13px;
+        color: #334155;
+        line-height: 1.5;
+    }
+
+    .info-box a {
+        color: #E53935;
+        font-weight: 600;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: stretch;
+        padding: 20px 24px 24px;
+        background: #F8FAFC;
+        border-top: 1px solid #E2E8F0;
+    }
+
+    .btn-submit-request {
+        width: 100%;
+        height: 48px;
+        padding: 0 24px;
+        background: linear-gradient(135deg, #E53935, #C62828);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 8px 20px rgba(229, 57, 53, 0.28);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn-submit-request:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(229, 57, 53, 0.34);
+    }
+
+    @media (max-width: 640px) {
+        .form-section {
+            padding: 18px 16px;
+        }
+
+        .form-actions {
+            padding: 16px;
+        }
+
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-row .half {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-request-page">
+    <div class="create-request-card">
+        <form method="post" action="" id="createRequestPageForm" novalidate>
+            {% csrf_token %}
+            <div id="createRequestPageError" style="display:none;margin-bottom:14px;padding:10px 12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:13px;font-weight:600;" role="alert"></div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Blood Requirement</h3>
+                <p class="form-section-sub">Core details for matching donors</p>
+
+                <div class="form-group">
+                    <label for="blood_group">Blood Group *</label>
+                    <select id="blood_group" name="blood_group" required>
+                        <option value="">Select Blood Group</option>
+                        {% for value, label in blood_groups %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="units_needed">Units Needed *</label>
+                        <input type="number" id="units_needed" name="units_needed" min="1" value="1" required>
+                    </div>
+                    <div class="form-group half">
+                        <label for="urgency">Urgency Level *</label>
+                        <select id="urgency" name="urgency" required>
+                            <option value="">Select Urgency</option>
+                            {% for value, label in urgency_levels %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Hospital / Location</h3>
+                <p class="form-section-sub">Where the blood is needed</p>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="hospital_id">Hospital (optional)</label>
+                        <select id="hospital_id" name="hospital_id">
+                            <option value="">-- Select or leave blank --</option>
+                            {% for h in hospitals %}
+                            <option value="{{ h.hospital_id }}">{{ h.hospital_name }} ({{ h.hospital_id }})</option>
+                            {% endfor %}
+                        </select>
+                        <small>No hospitals? <a href="{% url 'admin_add_hospital' %}" target="_blank">Add one</a> then create request.</small>
+                    </div>
+                    <div class="form-group half">
+                        <label for="source">Source</label>
+                        <select id="source" name="source">
+                            <option value="app">App</option>
+                            <option value="call">Call</option>
+                            <option value="hospital">Hospital</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="city">City (optional)</label>
+                        <select id="city_select" name="city_select">
+                            <option value="">-- Select or type below --</option>
+                            {% for c in cities %}
+                            <option value="{{ c.city }}" data-state="{{ c.state }}">{{ c.city }}, {{ c.state }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" id="city" name="city" class="city-manual-input" placeholder="Or type city e.g. Hyderabad">
+                        <small><a href="{% url 'admin_add_city' %}" target="_blank">Add city</a></small>
+                    </div>
+                    <div class="form-group half">
+                        <label for="state">State (optional)</label>
+                        <input type="text" id="state" name="state" placeholder="e.g. Telangana">
+                    </div>
+                </div>
+                <script>
+                document.getElementById('city_select').addEventListener('change', function() {
+                    var opt = this.options[this.selectedIndex];
+                    if (opt.value) {
+                        document.getElementById('city').value = opt.value;
+                        document.getElementById('state').value = opt.dataset.state || '';
+                    }
+                });
+                </script>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Emergency Details</h3>
+                <p class="form-section-sub">Timing and radius-based donor matching</p>
+
+                <div class="form-group">
+                    <label for="sla_minutes">SLA (minutes, optional)</label>
+                    <input type="number" id="sla_minutes" name="sla_minutes" min="0" placeholder="Target fulfillment time in minutes">
+                </div>
+
+                <div class="form-group location-section">
+                    <div class="location-toggle">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="use_location" name="use_location" value="on">
+                            <span>Notify only donors within a radius (location-based matching)</span>
+                        </label>
+                    </div>
+                    <div id="location-fields" class="location-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="location_name">Location name (e.g. Kondapur Hospital)</label>
+                            <input type="text" id="location_name" name="location_name" placeholder="e.g. Kondapur Hospital" disabled>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="req_lat">Latitude *</label>
+                                <input type="text" id="req_lat" name="req_lat" placeholder="e.g. 17.4842" disabled>
+                            </div>
+                            <div class="form-group half">
+                                <label for="req_lng">Longitude *</label>
+                                <input type="text" id="req_lng" name="req_lng" placeholder="e.g. 78.3894" disabled>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" id="getLocationBtn" class="btn-location">
+                                📍 Enable location & get coordinates
+                            </button>
+                            <p id="locationMessage" style="font-size: 13px; margin-top: 8px; display: none;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="radius_km">Radius (km)</label>
+                            <input type="text" inputmode="decimal" id="radius_km" name="radius_km" value="5" placeholder="5" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Additional</h3>
+                <p class="form-section-sub">Optional notes for the care team</p>
+
+                <div class="form-group">
+                    <label for="note">Additional Notes</label>
+                    <textarea id="note" name="note" placeholder="Enter any additional information about the blood request..."></textarea>
+                </div>
+
+                <div class="info-box" style="margin-top: 16px;">
+                    <strong>How donors respond:</strong> Notified donors see this request in the mobile app (or <a href="{% url 'donor_notifications' %}">Notifications page</a>). They can tap <strong>Accept & Donate</strong> or <strong>Can't Donate</strong>. You can see who accepted on the request detail page after creating.
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit-request">Create Request & Notify Donors</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('createRequestPageForm');
+  var useLocation = document.getElementById('use_location');
+  var locationFields = document.getElementById('location-fields');
+  var errBox = document.getElementById('createRequestPageError');
+
+  function setLocationEnabled(on) {
+    if (locationFields) locationFields.style.display = on ? 'block' : 'none';
+    ['location_name', 'req_lat', 'req_lng', 'radius_km'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.disabled = !on;
+    });
+    var radius = document.getElementById('radius_km');
+    if (on && radius && !String(radius.value || '').trim()) radius.value = '5';
+  }
+
+  if (useLocation) {
+    useLocation.addEventListener('change', function () {
+      setLocationEnabled(this.checked);
+    });
+    setLocationEnabled(useLocation.checked);
+  }
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      setLocationEnabled(!!(useLocation && useLocation.checked));
+
+      var blood = document.getElementById('blood_group');
+      var urgency = document.getElementById('urgency');
+      var units = document.getElementById('units_needed');
+      var missing = [];
+      if (!blood || !blood.value) missing.push('Blood Group');
+      if (!urgency || !urgency.value) missing.push('Urgency Level');
+      if (!units || !units.value || Number(units.value) < 1) missing.push('Units Needed');
+
+      if (useLocation && useLocation.checked) {
+        var lat = document.getElementById('req_lat');
+        var lng = document.getElementById('req_lng');
+        if (!lat || !String(lat.value).trim()) missing.push('Latitude');
+        if (!lng || !String(lng.value).trim()) missing.push('Longitude');
+      }
+
+      if (missing.length) {
+        e.preventDefault();
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.textContent = 'Please fill required fields: ' + missing.join(', ') + '.';
+          errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+      if (errBox) errBox.style.display = 'none';
+    });
+  }
+
+  var getLocationBtn = document.getElementById('getLocationBtn');
+  if (getLocationBtn) {
+    getLocationBtn.addEventListener('click', function () {
+      var reqLat = document.getElementById('req_lat');
+      var reqLng = document.getElementById('req_lng');
+      var msgEl = document.getElementById('locationMessage');
+      if (useLocation && !useLocation.checked) {
+        useLocation.checked = true;
+        setLocationEnabled(true);
+      }
+      if (msgEl) { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Getting location...';
+      if (!navigator.geolocation) {
+        if (msgEl) { msgEl.textContent = 'Browser does not support geolocation.'; msgEl.style.display = 'block'; msgEl.style.color = '#C62828'; }
+        btn.disabled = false;
+        btn.textContent = '📍 Enable location & get coordinates';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          reqLat.value = pos.coords.latitude.toFixed(6);
+          reqLng.value = pos.coords.longitude.toFixed(6);
+          if (msgEl) { msgEl.textContent = 'Coordinates set. You can edit or add a location name.'; msgEl.style.display = 'block'; msgEl.style.color = '#047857'; }
+          btn.disabled = false;
+          btn.textContent = '📍 Enable location & get coordinates';
+        },
+        function (err) {
+          var msg = 'Could not get location: ';
+          if (err.code === 1) msg += 'permission denied.';
+          else if (err.code === 2) msg += 'position unavailable.';
+          else if (err.code === 3) msg += 'timeout.';
+          else msg += err.message;
+          if (msgEl) { msgEl.textContent = msg; msgEl.style.display = 'block'; msgEl.style.color = '#C62828'; }
+          btn.disabled = false;
+          btn.textContent = '📍 Enable location & get coordinates';
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
+  }
+
+  var citySelect = document.getElementById('city_select');
+  var cityInput = document.getElementById('city');
+  var stateInput = document.getElementById('state');
+  if (citySelect && cityInput && stateInput) {
+    citySelect.addEventListener('change', function () {
+      var opt = this.options[this.selectedIndex];
+      if (opt.value) {
+        cityInput.value = opt.value;
+        stateInput.value = opt.dataset.state || '';
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,544 @@
+
+
+from pathlib import Path
+import os
+from datetime import timedelta
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_dotenv_if_present():
+    """
+    Lightweight .env loader for local development.
+    We only set keys that are not already in os.environ.
+    """
+    env_path = BASE_DIR / ".env"
+    if not env_path.exists():
+        return
+    try:
+        raw = env_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raw = env_path.read_text(encoding="utf-8-sig")
+
+    for line in raw.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if s.lower().startswith("export "):
+            s = s[7:].lstrip()
+        if "=" not in s:
+            continue
+        key, value = s.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv_if_present()
+
+
+def _make_config():
+    """Prefer real environment (Vercel) over a bundled .env file."""
+    try:
+        from decouple import AutoConfig
+        return AutoConfig(search_path=str(BASE_DIR))
+    except ImportError:
+        def config(key, default=None, cast=None):
+            val = os.environ.get(key, default)
+            if val is None:
+                return None
+            if cast is bool:
+                return str(val).lower() in ("1", "true", "yes", "on")
+            return val
+        return config
+
+
+config = _make_config()
+
+SECRET_KEY = config(
+    "DJANGO_SECRET_KEY",
+    default="django-insecure-38eb&2sar0s=x(93uf$yxu7ab4s!*7$ayf0^z^*70y!8g7)h$b",
+)
+
+IS_PRODUCTION = (
+    config("DJANGO_ENV", default="") == "production"
+) or bool(os.environ.get("VERCEL"))
+
+DEBUG = config("DJANGO_DEBUG", default=not IS_PRODUCTION, cast=bool)
+
+ALLOWED_HOSTS = ["*"]
+
+# Trust Vercel / proxy HTTPS so Google OAuth uses the public host, not localhost.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# ------------------------------------------------------------------------------
+# APP BASE URL
+# ------------------------------------------------------------------------------
+
+def _is_local_url(url):
+    value = (url or "").strip().lower()
+    return (
+        "localhost" in value
+        or "127.0.0.1" in value
+        or "[::1]" in value
+        or value.startswith("http://0.0.0.0")
+    )
+
+
+def _vercel_https_base():
+    prod = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip().rstrip("/")
+    deploy = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+    host = prod or deploy
+    if not host:
+        return ""
+    if host.startswith(("http://", "https://")):
+        return host.rstrip("/")
+    return f"https://{host}"
+
+
+_default_base = "http://localhost:8000"
+if os.environ.get("VERCEL"):
+    # Prefer stable production domain from Vercel; else current deployment host.
+    # Never hardcode an old alias (e.g. blood-450-81maqy) — deleted aliases
+    # return DEPLOYMENT_NOT_FOUND after Google redirects back.
+    _default_base = _vercel_https_base() or _default_base
+
+APP_BASE_URL = config("APP_BASE_URL", default=_default_base).rstrip("/")
+# Ignore deleted/stale alias or leftover localhost from a copied .env on Vercel.
+if "blood-450-81maqy.vercel.app" in (APP_BASE_URL or "") or (
+    os.environ.get("VERCEL") and _is_local_url(APP_BASE_URL)
+):
+    if os.environ.get("VERCEL"):
+        APP_BASE_URL = (_vercel_https_base() or APP_BASE_URL).rstrip("/")
+    else:
+        APP_BASE_URL = "http://localhost:8000"
+
+# ------------------------------------------------------------------------------
+# GOOGLE OAUTH SETTINGS
+# ------------------------------------------------------------------------------
+
+GOOGLE_OAUTH_CLIENT_ID = config("GOOGLE_OAUTH_CLIENT_ID", default=None)
+GOOGLE_OAUTH_CLIENT_SECRET = config("GOOGLE_OAUTH_CLIENT_SECRET", default=None)
+# Optional mobile OAuth client IDs (accepted as ID-token `aud` for Flutter)
+GOOGLE_OAUTH_ANDROID_CLIENT_ID = config("GOOGLE_OAUTH_ANDROID_CLIENT_ID", default=None)
+GOOGLE_OAUTH_IOS_CLIENT_ID = config("GOOGLE_OAUTH_IOS_CLIENT_ID", default=None)
+
+_raw_google_redirect = config("GOOGLE_REDIRECT_URI", default="").strip()
+_reject_google_redirect = (
+    not _raw_google_redirect
+    or "blood-450-81maqy.vercel.app" in _raw_google_redirect
+    or (os.environ.get("VERCEL") and _is_local_url(_raw_google_redirect))
+)
+if _reject_google_redirect:
+    GOOGLE_REDIRECT_URI = f"{APP_BASE_URL}/register/google/callback/"
+else:
+    GOOGLE_REDIRECT_URI = _raw_google_redirect
+# Google requires an exact match, including trailing slash.
+if GOOGLE_REDIRECT_URI and not GOOGLE_REDIRECT_URI.endswith("/"):
+    GOOGLE_REDIRECT_URI = f"{GOOGLE_REDIRECT_URI}/"
+
+# ==============================================================================
+# APPLICATIONS
+# ==============================================================================
+
+INSTALLED_APPS = [
+    "daphne",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    # Third-party apps
+    "channels",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "corsheaders",
+
+    # Local apps
+    "careapp",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "AYH.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.template.context_processors.csrf",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "careapp.context_processors.admin_notifications",
+                "careapp.context_processors.donor_notification_count",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "AYH.wsgi.application"
+ASGI_APPLICATION = "AYH.asgi.application"
+
+# ==============================================================================
+# DATABASE
+# ==============================================================================
+
+import dj_database_url
+
+DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip().strip("'").strip('"')
+# Vercel serverless: never keep persistent DB connections.
+_DB_CONN_MAX_AGE = 0 if os.environ.get("VERCEL") else 600
+
+if DATABASE_URL:
+    # Older dj-database-url builds reject conn_health_checks= on parse() and
+    # crash the whole Vercel function at import time (FUNCTION_INVOCATION_FAILED).
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=_DB_CONN_MAX_AGE,
+        )
+    }
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
+    # Required for Supabase/Neon transaction poolers (PgBouncer) on serverless.
+    if os.environ.get("VERCEL") or ":6543" in DATABASE_URL:
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(BASE_DIR / "db.sqlite3"),
+            # Avoid "database is locked" under concurrent dashboard polls + form POSTs
+            "OPTIONS": {"timeout": 30},
+        }
+    }
+
+if os.environ.get("VERCEL") and not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is missing on Vercel. Add it in Vercel env vars.")
+
+# ==============================================================================
+# PASSWORD VALIDATORS
+# ==============================================================================
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# ==============================================================================
+# INTERNATIONALIZATION
+# ==============================================================================
+
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+# ==============================================================================
+# STATIC / MEDIA
+# ==============================================================================
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "careapp" / "static",
+]
+
+if os.environ.get("VERCEL"):
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+WHITENOISE_USE_FINDERS = True
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = str(BASE_DIR / "media")
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ==============================================================================
+# AUTH / LOGIN ROUTES
+# ==============================================================================
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/home/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+# ==============================================================================
+# SESSIONS / COOKIES / CSRF
+# ==============================================================================
+
+# DB sessions break easily on Vercel (serverless + pooler). Use signed cookies there.
+if os.environ.get("VERCEL"):
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+    SESSION_SAVE_EVERY_REQUEST = False
+else:
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+    # False: WhatsApp unread polling was rewriting the session on every GET and
+    # locking SQLite, which broke Create Request POSTs (SessionInterrupted / 400).
+    SESSION_SAVE_EVERY_REQUEST = False
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+SESSION_COOKIE_SECURE = IS_PRODUCTION
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+
+SESSION_COOKIE_SAMESITE = "None" if IS_PRODUCTION else "Lax"
+CSRF_COOKIE_SAMESITE = "None" if IS_PRODUCTION else "Lax"
+
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_AGE = 31449600
+CSRF_COOKIE_DOMAIN = None
+CSRF_COOKIE_PATH = "/"
+
+_csrf_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://*.vercel.app",
+]
+if APP_BASE_URL and APP_BASE_URL.startswith(("http://", "https://")):
+    _csrf_origins.append(APP_BASE_URL)
+# Always trust the current Vercel deployment host when present.
+if os.environ.get("VERCEL"):
+    _vercel_host = os.environ.get("VERCEL_URL", "").strip().rstrip("/")
+    if _vercel_host:
+        _csrf_origins.append(f"https://{_vercel_host}")
+
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(_csrf_origins))
+
+CSRF_FAILURE_VIEW = "django.views.csrf.csrf_failure"
+
+# ==============================================================================
+# REST FRAMEWORK
+# ==============================================================================
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
+    # Only throttle authenticated users; allow register/login without rate limit
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "1000/hour",
+        "password_reset": "5/hour",
+    },
+    # ISO-8601 with timezone so Flutter (and clients) don't treat UTC as local.
+    "DATETIME_FORMAT": "iso-8601",
+    "DATE_FORMAT": "%Y-%m-%d",
+}
+
+# ==============================================================================
+# JWT
+# ==============================================================================
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+}
+
+# ==============================================================================
+# CORS
+# ==============================================================================
+
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # "https://yourdomain.com",
+    ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# ==============================================================================
+# CACHE
+# ==============================================================================
+
+REDIS_URL = config("REDIS_URL", default="redis://127.0.0.1:6379/0")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
+# ==============================================================================
+# CHANNELS (WebSockets — WhatsApp live chat)
+# ==============================================================================
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
+
+# Fallback when Redis is unavailable (local dev / serverless)
+if os.environ.get("VERCEL") or config("USE_INMEMORY_CHANNEL_LAYER", default=False, cast=bool):
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
+else:
+    try:
+        import redis as _redis  # noqa: F401
+        _redis.from_url(REDIS_URL).ping()
+    except Exception:
+        CHANNEL_LAYERS = {
+            "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+        }
+
+# ==============================================================================
+# CELERY (WhatsApp message queue)
+# ==============================================================================
+
+CELERY_BROKER_URL = REDIS_URL
+# No result backend: WhatsApp sends are fire-and-forget. Avoids long Redis
+# reconnect hangs inside Celery's result consumer when Redis is down.
+CELERY_RESULT_BACKEND = None
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_ALWAYS_EAGER = config("CELERY_TASK_ALWAYS_EAGER", default=False, cast=bool)
+CELERY_BROKER_CONNECTION_RETRY = False
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 0
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "socket_connect_timeout": 1,
+    "socket_timeout": 1,
+}
+
+# ==============================================================================
+# WHATSAPP CLOUD API
+# ==============================================================================
+
+WHATSAPP_PROVIDER = config("WHATSAPP_PROVIDER", default="console")
+WHATSAPP_ACCESS_TOKEN = config("WHATSAPP_ACCESS_TOKEN", default=None)
+WHATSAPP_PHONE_NUMBER_ID = config("WHATSAPP_PHONE_NUMBER_ID", default=None)
+WHATSAPP_BUSINESS_ACCOUNT_ID = config("WHATSAPP_BUSINESS_ACCOUNT_ID", default=None)
+WHATSAPP_VERIFY_TOKEN = config("WHATSAPP_VERIFY_TOKEN", default="blood450_verify_token")
+WHATSAPP_APP_SECRET = config("WHATSAPP_APP_SECRET", default=None)
+WHATSAPP_API_VERSION = config("WHATSAPP_API_VERSION", default="v20.0")
+WHATSAPP_BASE_PHONE_DISPLAY = config("WHATSAPP_BASE_PHONE_DISPLAY", default="")
+# E.164 country prefix when normalizing 10-digit local numbers (e.g. 91 for India).
+WHATSAPP_DEFAULT_COUNTRY_CODE = config("WHATSAPP_DEFAULT_COUNTRY_CODE", default="91")
+# Ignore webhook events for other phone_number_id values on the same WABA.
+WHATSAPP_VALIDATE_PHONE_NUMBER_ID = config("WHATSAPP_VALIDATE_PHONE_NUMBER_ID", default=True, cast=bool)
+# Proactive outbound (welcome on register, blood alerts) — off by default in dev;
+# donors must message the business number first; auto-reply after inbound still runs.
+WHATSAPP_PROACTIVE_OUTBOUND = config("WHATSAPP_PROACTIVE_OUTBOUND", default=False, cast=bool)
+WHATSAPP_SEND_WELCOME_ON_REGISTER = config("WHATSAPP_SEND_WELCOME_ON_REGISTER", default=False, cast=bool)
+WHATSAPP_AUTO_REPLY_ENABLED = config("WHATSAPP_AUTO_REPLY_ENABLED", default=True, cast=bool)
+WHATSAPP_WEBHOOK_SKIP_SIGNATURE = config("WHATSAPP_WEBHOOK_SKIP_SIGNATURE", default=DEBUG, cast=bool)
+TWILIO_WHATSAPP_FROM = config("TWILIO_WHATSAPP_FROM", default=None)
+
+# ==============================================================================
+# OTP / SMS SETTINGS
+# ==============================================================================
+
+OTP_SMS_BACKEND = config("OTP_SMS_BACKEND", default="console")
+
+FAST2SMS_API_KEY = config("FAST2SMS_API_KEY", default=None)
+
+TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default=None)
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default=None)
+TWILIO_FROM_NUMBER = config("TWILIO_FROM_NUMBER", default=None)
+TWILIO_VERIFY_SERVICE_SID = config("TWILIO_VERIFY_SERVICE_SID", default=None)
+
+MSG91_AUTH_KEY = config("MSG91_AUTH_KEY", default=None)
+MSG91_OTP_TEMPLATE_ID = config("MSG91_OTP_TEMPLATE_ID", default=None)
+
+# ==============================================================================
+# EMAIL (password reset)
+# ==============================================================================
+
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config(
+    "DEFAULT_FROM_EMAIL",
+    default="Blood450 <noreply@blood450.local>",
+)
+PASSWORD_RESET_SITE_NAME = config("PASSWORD_RESET_SITE_NAME", default="Blood450")
+
+# ==============================================================================
+# BLOOD REQUEST LOCATION
+# ==============================================================================
+
+DEFAULT_RADIUS_KM = 10

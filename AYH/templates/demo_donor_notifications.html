@@ -1,0 +1,2225 @@
+{% extends 'base.html' %}
+
+{% block title %}Donor Dashboard - Blood 450{% endblock %}
+
+{% block page_heading %}Dashboard{% endblock %}
+{% block page_subheading %}Your donation hub — track requests, help save lives.{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .dd {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        color: var(--navy, #102A56);
+    }
+
+    /* —— Shared card shell —— */
+    .dd-card {
+        background: #fff;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 4px 14px rgba(16, 42, 86, 0.04);
+    }
+    .dd-card + .dd-card { margin-top: 10px; }
+    .dd-head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 10px;
+    }
+    .dd-head .dd-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: var(--pink, #FFF1F2);
+        color: #EF2B2D;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+    }
+    .dd-head .dd-ico svg { width: 15px; height: 15px; }
+    .dd-head h3 {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--navy, #102A56);
+        margin: 0;
+        line-height: 1.2;
+    }
+    .dd-head p {
+        font-size: 0.68rem;
+        color: var(--muted, #64748B);
+        font-weight: 500;
+        margin: 1px 0 0;
+    }
+    .dd-head .dd-head-right { margin-left: auto; }
+    .dd-count-pill {
+        display: inline-flex;
+        align-items: center;
+        height: 22px;
+        padding: 0 9px;
+        border-radius: 999px;
+        background: var(--pink, #FFF1F2);
+        border: 1px solid #FECACA;
+        color: #C62828;
+        font-size: 0.68rem;
+        font-weight: 800;
+    }
+    .dd-link {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #EF2B2D;
+    }
+    .dd-link:hover { text-decoration: underline; }
+    .dd-section-gap { margin-top: 12px; }
+
+    /* —— 1. Hero —— */
+    .dd-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid #FECACA;
+        background: linear-gradient(120deg, #ffffff 0%, #FFF1F2 58%, #FFE4E6 100%);
+        box-shadow: var(--shadow-card, 0 8px 22px rgba(16, 42, 86, 0.06));
+        margin-bottom: 10px;
+    }
+    .dd-hero-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #EF2B2D;
+        margin-bottom: 5px;
+    }
+    .dd-hero-label::before {
+        content: '';
+        width: 14px;
+        height: 2px;
+        border-radius: 2px;
+        background: #EF2B2D;
+    }
+    .dd-hero h2 {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+        margin: 0 0 4px;
+        color: var(--navy, #102A56);
+    }
+    .dd-hero .dd-hero-sub {
+        font-size: 0.76rem;
+        color: var(--muted, #64748B);
+        line-height: 1.4;
+        max-width: 52ch;
+        margin: 0 0 9px;
+    }
+    .dd-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .dd-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .dd-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .dd-pill.blood {
+        background: linear-gradient(180deg, #EF2B2D, #C62828);
+        color: #fff;
+        box-shadow: 0 5px 12px rgba(239, 43, 45, 0.26);
+    }
+    .dd-pill.ok { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+    .dd-pill.wait { background: #FFF7ED; color: #C2410C; border-color: #FED7AA; }
+    .dd-pill.plain { background: #fff; color: var(--navy, #102A56); border-color: var(--line, #E2E8F0); }
+    .dd-hero-art {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        text-align: center;
+    }
+    .dd-hero-art .dd-drop {
+        width: 62px;
+        height: 62px;
+        border-radius: 18px;
+        background: #fff;
+        border: 1px solid #FECACA;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 8px 20px rgba(239, 43, 45, 0.14);
+    }
+    .dd-hero-art .dd-drop svg { width: 34px; height: 34px; }
+    .dd-hero-art span {
+        font-size: 0.64rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        letter-spacing: -0.01em;
+    }
+
+    /* —— 2. Auto refresh bar —— */
+    .dd-refresh {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px 14px;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(16, 42, 86, 0.04);
+        margin-bottom: 12px;
+    }
+    .dd-refresh-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10B981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+        flex-shrink: 0;
+    }
+    .dd-refresh.paused .dd-refresh-dot {
+        background: #94A3B8;
+        box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+    }
+    .dd-refresh-hint {
+        flex: 1 1 200px;
+        font-size: 0.72rem;
+        color: var(--muted, #64748B);
+        font-weight: 500;
+        min-width: 0;
+    }
+    .auto-refresh-btn {
+        height: 30px;
+        padding: 0 12px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        font-size: 0.7rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: filter 0.15s, background 0.15s;
+    }
+    .auto-refresh-btn.on {
+        background: linear-gradient(180deg, #EF2B2D, #C62828);
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(239, 43, 45, 0.24);
+    }
+    .auto-refresh-btn.off {
+        background: #F1F5F9;
+        color: #64748B;
+        border-color: var(--line, #E2E8F0);
+    }
+    .auto-refresh-btn:hover { filter: brightness(1.04); }
+
+    /* —— 3 & 4. Stats + metrics —— */
+    .dd-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+        align-items: stretch;
+    }
+    .dd-stat {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: #fff;
+        border: 1px solid var(--line, #E2E8F0);
+        border-left: 3px solid #EF2B2D;
+        border-radius: 12px;
+        padding: 11px 12px;
+        color: inherit;
+        min-width: 0;
+        transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+        box-shadow: 0 3px 10px rgba(16, 42, 86, 0.04);
+    }
+    .dd-stat:hover {
+        box-shadow: 0 8px 18px rgba(16, 42, 86, 0.08);
+        border-color: #FECACA;
+        border-left-color: #EF2B2D;
+    }
+    .dd-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+    .dd-stat-ico,
+    .dd-metric-ico {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        background: var(--pink, #FFF1F2);
+        color: #EF2B2D;
+    }
+    .dd-stat-ico svg,
+    .dd-metric-ico svg { width: 15px; height: 15px; }
+    .dd-stat .dd-num {
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        color: var(--navy, #102A56);
+        word-break: break-word;
+    }
+    .dd-stat .dd-lbl,
+    .dd-metric .dd-lbl {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        color: var(--muted, #64748B);
+    }
+    .dd-stat .dd-go {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #94A3B8;
+    }
+    .dd-stat.s-total { border-left-color: #EF2B2D; }
+    .dd-stat.s-total .dd-stat-ico { background: #FEE2E2; color: #C62828; }
+    .dd-stat.s-pending { border-left-color: #F59E0B; }
+    .dd-stat.s-pending .dd-stat-ico { background: #FFFBEB; color: #D97706; }
+    .dd-stat.s-accepted { border-left-color: #10B981; }
+    .dd-stat.s-accepted .dd-stat-ico { background: #ECFDF5; color: #059669; }
+    .dd-stat.s-rejected { border-left-color: #94A3B8; }
+    .dd-stat.s-rejected .dd-stat-ico { background: #F1F5F9; color: #64748B; }
+
+    .dd-metric {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 12px;
+        padding: 11px 12px;
+        min-width: 0;
+        height: 100%;
+        min-height: 64px;
+        box-shadow: 0 3px 10px rgba(16, 42, 86, 0.04);
+        transition: box-shadow 0.18s, border-color 0.18s;
+    }
+    .dd-metric:hover {
+        box-shadow: 0 8px 18px rgba(16, 42, 86, 0.08);
+        border-color: #FECACA;
+    }
+    .dd-metric .dd-num {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--navy, #102A56);
+        line-height: 1.15;
+        word-break: break-word;
+    }
+    .dd-metric.m-month .dd-metric-ico { background: #FFF1F2; color: #EF2B2D; }
+    .dd-metric.m-last .dd-metric-ico { background: #EFF6FF; color: #2563EB; }
+    .dd-metric.m-life .dd-metric-ico { background: #FEF2F2; color: #C62828; }
+    .dd-metric.m-elig .dd-metric-ico { background: #ECFDF5; color: #059669; }
+    .dd-metric.m-elig.wait .dd-metric-ico { background: #FFF7ED; color: #EA580C; }
+    .dd-elig-bar {
+        margin-top: 5px;
+        height: 4px;
+        border-radius: 999px;
+        background: #E2E8F0;
+        overflow: hidden;
+    }
+    .dd-elig-bar i {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #10B981, #059669);
+    }
+    .dd-metric.m-elig.wait .dd-elig-bar i { background: linear-gradient(90deg, #EF2B2D, #C62828); }
+
+    /* —— 5. Three column working area —— */
+    .dd-cols-3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+    .dd-col {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .dd-col > .dd-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 200px;
+        padding: 10px;
+    }
+    .dd-col > .dd-card + .dd-card { margin-top: 10px; }
+    .dd-col-3 { gap: 0; }
+
+    /* Nearby rows */
+    .dd-nearby-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 2px;
+        scrollbar-width: thin;
+    }
+    .dd-nearby-list::-webkit-scrollbar { width: 5px; }
+    .dd-nearby-list::-webkit-scrollbar-thumb { background: rgba(239, 43, 45, 0.3); border-radius: 999px; }
+    .nearby-row {
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 12px;
+        padding: 10px 11px;
+        background: #fff;
+        transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .nearby-row:hover {
+        border-color: #FECACA;
+        box-shadow: 0 8px 18px rgba(239, 43, 45, 0.07);
+    }
+    .nearby-row.crit {
+        border-color: #FECACA;
+        background: linear-gradient(180deg, #FFF5F5 0%, #ffffff 60%);
+    }
+    .nearby-row.done { opacity: 0.72; }
+    .dd-row-top {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 7px;
+    }
+    .dd-blood-chip {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: linear-gradient(180deg, #FFF1F2, #FFE4E6);
+        border: 1px solid #FECACA;
+        color: #C62828;
+        font-size: 0.8rem;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        letter-spacing: -0.03em;
+    }
+    .dd-row-main { min-width: 0; flex: 1; }
+    .dd-row-title {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .dd-row-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 0.68rem;
+        color: var(--muted, #64748B);
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    .dd-row-meta svg { width: 11px; height: 11px; vertical-align: -1px; }
+    .dd-urg {
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+    .dd-urg.critical { background: #EF2B2D; color: #fff; box-shadow: 0 4px 10px rgba(239, 43, 45, 0.28); }
+    .dd-urg.high { background: #F59E0B; color: #fff; }
+    .dd-urg.medium { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .dd-row-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .dd-btn-sm {
+        height: 28px;
+        padding: 0 11px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        font-size: 0.7rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: filter 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .dd-btn-sm.accept {
+        background: linear-gradient(180deg, #EF2B2D, #C62828);
+        color: #fff;
+        box-shadow: 0 5px 12px rgba(239, 43, 45, 0.22);
+    }
+    .dd-btn-sm.reject {
+        background: #fff;
+        color: #C62828;
+        border-color: #FECACA;
+    }
+    .dd-btn-sm.reject:hover { background: #FFF1F2; border-color: #EF2B2D; }
+    .dd-btn-sm.ghost {
+        background: #F8FAFC;
+        color: var(--navy, #102A56);
+        border-color: var(--line, #E2E8F0);
+        margin-left: auto;
+    }
+    .dd-btn-sm.ghost:hover { background: #F1F5F9; }
+    .dd-btn-sm.accept:hover { filter: brightness(1.05); }
+    .dd-row-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 8px;
+        font-size: 0.68rem;
+        font-weight: 800;
+    }
+    .dd-row-state.accepted { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .dd-row-state.rejected { background: #F1F5F9; color: #64748B; border: 1px solid var(--line, #E2E8F0); }
+
+    /* Activity timeline */
+    .dd-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: 180px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    .dd-timeline::-webkit-scrollbar { width: 5px; }
+    .dd-timeline::-webkit-scrollbar-thumb { background: rgba(239, 43, 45, 0.3); border-radius: 999px; }
+    .dd-act {
+        display: flex;
+        gap: 9px;
+        padding: 8px 0;
+        border-bottom: 1px dashed #F1F5F9;
+    }
+    .dd-act:last-child { border-bottom: none; }
+    .dd-act-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        background: var(--pink, #FFF1F2);
+        color: #EF2B2D;
+    }
+    .dd-act-dot svg { width: 12px; height: 12px; }
+    .dd-act-dot.k-response { background: #ECFDF5; color: #059669; }
+    .dd-act-dot.k-profile { background: #EFF6FF; color: #2563EB; }
+    .dd-act-dot.k-account { background: #F1F5F9; color: #64748B; }
+    .dd-act-body { min-width: 0; }
+    .dd-act-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        line-height: 1.25;
+    }
+    .dd-act-msg {
+        font-size: 0.68rem;
+        color: var(--muted, #64748B);
+        line-height: 1.35;
+    }
+    .dd-act-time {
+        font-size: 0.62rem;
+        color: #94A3B8;
+        font-weight: 600;
+        margin-top: 1px;
+    }
+    .dd-quote {
+        margin-top: auto;
+        padding: 11px 12px;
+        border-radius: 12px;
+        background: linear-gradient(150deg, var(--pink, #FFF1F2), #fff);
+        border: 1px solid #FECACA;
+        flex-shrink: 0;
+    }
+    .dd-quote p {
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        margin: 0 0 2px;
+        letter-spacing: -0.01em;
+    }
+    .dd-quote small {
+        font-size: 0.66rem;
+        color: var(--muted, #64748B);
+        line-height: 1.35;
+    }
+
+    /* Emergency card */
+    .dd-card.dd-emergency {
+        border-color: #FECACA;
+        background: linear-gradient(160deg, #FFF1F2 0%, #ffffff 62%);
+        position: relative;
+        overflow: hidden;
+    }
+    .dd-card.dd-emergency::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: linear-gradient(90deg, #EF2B2D, #C62828);
+    }
+    .dd-emergency .dd-ico { background: #EF2B2D; color: #fff; }
+    .dd-emg-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .dd-emg-box {
+        background: #fff;
+        border: 1px solid #FECACA;
+        border-radius: 10px;
+        padding: 8px 10px;
+        min-width: 0;
+    }
+    .dd-emg-box .k {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+        color: var(--muted, #64748B);
+    }
+    .dd-emg-box .v {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        letter-spacing: -0.01em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .dd-emg-box .v.blood { color: #EF2B2D; font-size: 0.95rem; }
+
+    /* Tips */
+    .dd-tips {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+    .dd-tip {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: 0.72rem;
+        color: #334155;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+    .dd-tip .dd-tick {
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        background: #ECFDF5;
+        color: #059669;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    .dd-tip .dd-tick svg { width: 10px; height: 10px; }
+
+    /* —— 6. Below the fold —— */
+    .dd-cols-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+    .dd-cols-2 > .dd-card {
+        display: flex;
+        flex-direction: column;
+        height: 250px;
+        min-height: 0;
+        padding: 10px;
+    }
+    .dd-cols-2 .dd-table-wrap {
+        flex: 0 0 auto;
+        max-height: 180px;
+        overflow: auto;
+    }
+    .dd-cols-2 .dd-empty-sm {
+        flex: 0 0 auto;
+        min-height: 0;
+        padding: 10px 12px;
+        display: block;
+    }
+    .dd-cols-2 .dd-impact-grid {
+        flex-shrink: 0;
+        gap: 6px;
+    }
+    .dd-cols-2 .dd-impact {
+        padding: 8px;
+    }
+    .dd-cols-2 .dd-impact .dd-num {
+        font-size: 1rem;
+    }
+    .dd-cols-2 .dd-chart-box {
+        flex: 0 0 auto;
+        height: 88px;
+        min-height: 88px;
+        max-height: 88px;
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .dd-table-wrap { overflow-x: auto; scrollbar-width: thin; }
+    table.dd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.74rem;
+        min-width: 460px;
+    }
+    table.dd-table th {
+        text-align: left;
+        padding: 7px 10px;
+        background: #F8FAFC;
+        color: var(--muted, #64748B);
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--line, #E2E8F0);
+        white-space: nowrap;
+    }
+    table.dd-table th:first-child { border-radius: 8px 0 0 0; }
+    table.dd-table th:last-child { border-radius: 0 8px 0 0; }
+    table.dd-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #F1F5F9;
+        color: var(--navy, #102A56);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    table.dd-table tbody tr:hover td { background: #FFF9F9; }
+    table.dd-table tbody tr:last-child td { border-bottom: none; }
+    .dd-td-blood { color: #EF2B2D; font-weight: 800; }
+    .dd-tag {
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        background: #ECFDF5;
+        color: #047857;
+        border: 1px solid #A7F3D0;
+    }
+
+    .dd-impact-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .dd-impact {
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 11px;
+        padding: 10px;
+        background: #F8FAFC;
+        min-width: 0;
+    }
+    .dd-impact .dd-num {
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: #EF2B2D;
+        line-height: 1.1;
+    }
+    .dd-impact .dd-lbl {
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted, #64748B);
+    }
+    .dd-chart-box { height: 88px; min-height: 88px; max-height: 88px; position: relative; margin-top: 8px; overflow: hidden; }
+
+    .dd-cta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: stretch;
+    }
+    .dd-cta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line, #E2E8F0);
+        background: #fff;
+        color: inherit;
+        height: 100%;
+        box-shadow: 0 6px 18px rgba(16, 42, 86, 0.05);
+        transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+    }
+    .dd-cta:hover {
+        border-color: #FECACA;
+        box-shadow: 0 8px 18px rgba(239, 43, 45, 0.08);
+    }
+    .dd-cta .dd-cta-ico {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        background: var(--pink, #FFF1F2);
+        color: #EF2B2D;
+    }
+    .dd-cta .dd-cta-ico.teal { background: #ECFDF5; color: #059669; }
+    .dd-cta .dd-cta-ico svg { width: 18px; height: 18px; }
+    .dd-cta .t {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        letter-spacing: -0.01em;
+    }
+    .dd-cta .s {
+        font-size: 0.68rem;
+        color: var(--muted, #64748B);
+        font-weight: 500;
+        line-height: 1.35;
+    }
+
+    /* My responses */
+    .dd-resp-list { display: flex; flex-direction: column; gap: 8px; }
+    .response-item-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 12px;
+        padding: 10px 11px;
+        background: #fff;
+        transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .response-item-card:hover {
+        border-color: #FECACA;
+        box-shadow: 0 8px 18px rgba(16, 42, 86, 0.05);
+    }
+    .response-item-card .dd-row-main { flex: 1; }
+    .status-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: 8px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+    .status-box.accepted { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .status-box.rejected { background: #F1F5F9; color: #64748B; border: 1px solid var(--line, #E2E8F0); }
+
+    /* Full request cards (JS targets) */
+    .blood-requests-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .notification-card {
+        background: #fff;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 13px;
+        padding: 13px;
+        min-width: 0;
+        box-shadow: 0 4px 12px rgba(16, 42, 86, 0.04);
+        transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    }
+    .notification-card:hover {
+        border-color: #FECACA;
+        box-shadow: 0 12px 26px rgba(239, 43, 45, 0.08);
+        transform: translateY(-2px);
+    }
+    .notification-card.responded {
+        background: #F8FAFC;
+        box-shadow: none;
+    }
+    .notification-card.responded:hover { transform: none; }
+    .notification-card.urgency-critical {
+        border-color: #FECACA;
+        background: linear-gradient(180deg, #FFF5F5 0%, #ffffff 50%);
+    }
+    .notification-card.urgency-high {
+        border-color: #FED7AA;
+        background: linear-gradient(180deg, #FFFBF5 0%, #ffffff 50%);
+    }
+    .notification-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 9px;
+    }
+    .notification-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        letter-spacing: -0.01em;
+    }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        height: 21px;
+        padding: 0 9px;
+        border-radius: 999px;
+        font-size: 0.63rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+    .badge-critical { background: #EF2B2D; color: #fff; box-shadow: 0 4px 10px rgba(239, 43, 45, 0.26); }
+    .badge-high { background: #F59E0B; color: #fff; }
+    .badge-medium { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .notification-body { margin-bottom: 10px; }
+    .info-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 0;
+    }
+    .info-label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted, #64748B);
+    }
+    .info-value {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+    }
+    .blood-value { color: #EF2B2D; font-size: 0.95rem; }
+    .notification-note {
+        margin-top: 9px;
+        padding: 8px 10px;
+        background: #FFFBEB;
+        border-left: 3px solid #F59E0B;
+        border-radius: 9px;
+        font-size: 0.72rem;
+        color: #92400E;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    .notification-meta {
+        font-size: 0.65rem;
+        color: #94A3B8;
+        font-weight: 600;
+        margin-top: 7px;
+    }
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .btn-accept {
+        flex: 1;
+        min-width: 116px;
+        height: 34px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #EF2B2D, #C62828);
+        color: #fff;
+        font-size: 0.76rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(239, 43, 45, 0.22);
+        transition: transform 0.15s, filter 0.15s;
+    }
+    .btn-accept:hover { transform: translateY(-1px); filter: brightness(1.04); }
+    .btn-reject {
+        flex: 1;
+        min-width: 116px;
+        height: 34px;
+        border: 1px solid #FECACA;
+        border-radius: 10px;
+        background: #fff;
+        color: #C62828;
+        font-size: 0.76rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-reject:hover { background: #FFF1F2; border-color: #EF2B2D; }
+    .btn-delay {
+        margin-top: 8px;
+        width: 100%;
+        height: 32px;
+        border: 1px solid #FED7AA;
+        border-radius: 10px;
+        background: #FFF7ED;
+        color: #C2410C;
+        font-size: 0.72rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-delay:hover { background: #FFEDD5; color: #9A3412; }
+    .response-status {
+        padding: 8px 11px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+    .response-status.accepted { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .response-status.rejected { background: #F1F5F9; color: #64748B; border: 1px solid var(--line, #E2E8F0); }
+
+    .no-notifications {
+        text-align: center;
+        padding: 22px 16px;
+        border-radius: 12px;
+        border: 1px dashed var(--line, #E2E8F0);
+        background: #F8FAFC;
+        color: var(--muted, #64748B);
+        font-size: 0.74rem;
+    }
+    .no-notifications h3 {
+        font-size: 0.86rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+        margin: 0 0 5px;
+    }
+    .no-notifications p { margin: 0 0 4px; line-height: 1.45; }
+    .no-notifications a { color: #EF2B2D; font-weight: 800; }
+    .dd-empty-sm {
+        padding: 10px 12px;
+        border-radius: 11px;
+        border: 1px dashed var(--line, #E2E8F0);
+        background: #F8FAFC;
+        color: var(--muted, #64748B);
+        font-size: 0.72rem;
+        text-align: center;
+        line-height: 1.45;
+    }
+    .dd-col > .dd-card > .dd-empty-sm,
+    .dd-cols-2 > .dd-card > .dd-empty-sm {
+        flex: 0 0 auto;
+        display: block;
+        min-height: 0;
+        padding: 10px 12px;
+    }
+    .dd-col > .dd-card > .dd-nearby-list,
+    .dd-col > .dd-card > .dd-timeline {
+        flex: 0 1 auto;
+        min-height: 0;
+    }
+    .dd-col > .dd-card > .dd-tips {
+        flex: 0 0 auto;
+    }
+    .dd-card.dd-emergency { flex: 0 0 auto !important; }
+    .delay-resolved-msg {
+        padding: 9px 11px;
+        border-radius: 10px;
+        background: #ECFDF5;
+        color: #047857;
+        border: 1px solid #A7F3D0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-bottom: 7px;
+    }
+    .delay-resolved-msg:last-child { margin-bottom: 0; }
+
+    /* —— Modals —— */
+    .delay-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(16, 42, 86, 0.45);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 16px;
+    }
+    .delay-modal-overlay.show { display: flex; }
+    .delay-modal-box {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--line, #E2E8F0);
+        padding: 20px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 24px 48px rgba(16, 42, 86, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .delay-modal-box h3 {
+        margin: 0 0 6px;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--navy, #102A56);
+    }
+    .delay-modal-box .modal-lead {
+        margin: 0 0 14px;
+        font-size: 0.76rem;
+        color: var(--muted, #64748B);
+        line-height: 1.45;
+    }
+    .delay-modal-box .form-group { margin-bottom: 11px; }
+    .delay-modal-box label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--navy, #102A56);
+    }
+    .delay-modal-box input,
+    .delay-modal-box select {
+        width: 100%;
+        height: 36px;
+        padding: 0 10px;
+        border: 1px solid var(--line, #E2E8F0);
+        border-radius: 10px;
+        background: #F8FAFC;
+        font-size: 0.8rem;
+        color: var(--navy, #102A56);
+        transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .delay-modal-box input:focus,
+    .delay-modal-box select:focus {
+        outline: none;
+        background: #fff;
+        border-color: #EF2B2D;
+        box-shadow: 0 0 0 3px rgba(239, 43, 45, 0.14);
+    }
+    .delay-modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+    .delay-modal-actions button {
+        height: 34px;
+        padding: 0 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .delay-btn-cancel { background: #F1F5F9; color: #475569; }
+    .delay-btn-save,
+    .delay-btn-ok {
+        background: linear-gradient(180deg, #EF2B2D, #C62828);
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(239, 43, 45, 0.22);
+    }
+
+    .dd-hidden-by-search { display: none !important; }
+
+    /* —— Responsive —— */
+    @media (max-width: 1200px) {
+        .dd-cols-3 { grid-template-columns: 1fr 1fr; }
+        .dd-cols-3 .dd-col-3 { grid-column: 1 / -1; }
+        .dd-cols-3 .dd-col-3 > .dd-card { margin-top: 0; }
+        .dd-cols-3 .dd-col-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: start;
+        }
+        .dd-cols-3 .dd-col-3 > .dd-card { height: auto; }
+    }
+    @media (max-width: 992px) {
+        .dd-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dd-cols-2 { grid-template-columns: 1fr; }
+        .dd-cols-2 > .dd-card { min-height: 0; }
+        .blood-requests-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+        .dd-hero { flex-direction: column; align-items: flex-start; }
+        .dd-hero-art { flex-direction: row; align-self: stretch; justify-content: center; }
+        .dd-cols-3 { grid-template-columns: 1fr; }
+        .dd-cols-3 .dd-col-3 { grid-template-columns: 1fr; }
+        .dd-cols-3 .dd-col-3 > .dd-card + .dd-card { margin-top: 0; }
+        .dd-cta-grid { grid-template-columns: 1fr; }
+        .dd-nearby-list,
+        .dd-timeline { max-height: none; min-height: 0; }
+        .dd-col > .dd-card,
+        .dd-cols-2 > .dd-card { min-height: 0; height: auto; }
+    }
+    @media (max-width: 576px) {
+        .dd-hero h2 { font-size: 12px; }
+        .dd-grid-4 { gap: 8px; }
+        .dd-stat .dd-num { font-size: 1.15rem; }
+        .dd-impact-grid { grid-template-columns: 1fr 1fr; }
+        .notification-actions { flex-direction: column; }
+        .btn-accept, .btn-reject { width: 100%; }
+    }
+    @media (max-width: 400px) {
+        .dd-emg-grid { grid-template-columns: 1fr; }
+        .dd-row-actions .dd-btn-sm { flex: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dd">
+
+    <!-- 1. Hero welcome -->
+    <section class="dd-hero">
+        <div>
+            <span class="dd-hero-label">Good to see you again</span>
+            <h2>Welcome back, {{ user.get_full_name|default:user.username }}!</h2>
+            <p class="dd-hero-sub">Every request you answer moves a patient closer to a second chance. Here's what needs you today.</p>
+            <div class="dd-pills">
+                {% if has_profile and donor_profile.blood_group %}
+                <span class="dd-pill blood">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5c.4 0 .8.2 1 .5C15.2 6 21 12.2 21 16.2A9 9 0 0 1 3 16.2C3 12.2 8.8 6 11 3c.2-.3.6-.5 1-.5z"/></svg>
+                    {{ donor_profile.blood_group }}
+                </span>
+                {% endif %}
+                {% if days_until_eligible == 0 %}
+                <span class="dd-pill ok">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                    Eligible to donate
+                </span>
+                {% else %}
+                <span class="dd-pill wait">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    Eligible in {{ days_until_eligible }} day{{ days_until_eligible|pluralize }}
+                </span>
+                {% endif %}
+                {% if has_profile and donor_profile.city %}
+                <span class="dd-pill plain">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ donor_profile.city }}
+                </span>
+                {% endif %}
+                {% if unread_count %}
+                <span class="dd-pill plain">{{ unread_count }} unread alert{{ unread_count|pluralize }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="dd-hero-art" aria-hidden="true">
+            <span class="dd-drop">
+                <svg viewBox="0 0 48 48" fill="none">
+                    <defs>
+                        <linearGradient id="ddDropGrad" x1="12" y1="4" x2="38" y2="44" gradientUnits="userSpaceOnUse">
+                            <stop offset="0" stop-color="#EF2B2D"/>
+                            <stop offset="1" stop-color="#C62828"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M24 4c1 0 1.9.5 2.5 1.3C30.7 10.8 40 21.6 40 29.4A16 16 0 0 1 8 29.4C8 21.6 17.3 10.8 21.5 5.3 22.1 4.5 23 4 24 4z" fill="url(#ddDropGrad)"/>
+                    <path d="M22 20v5h-5v4h5v5h4v-5h5v-4h-5v-5z" fill="#fff"/>
+                    <path d="M15 30c0 5 4 9 9 9" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span>Small Acts Save Big Lives</span>
+        </div>
+    </section>
+
+    <!-- 2. Auto-refresh status bar -->
+    <div class="dd-refresh" id="autoRefreshBar">
+        <span class="dd-refresh-dot" aria-hidden="true"></span>
+        <button type="button" id="autoRefreshBtn" class="auto-refresh-btn on" onclick="toggleAutoRefresh()">
+            <span id="autoRefreshIcon">🔄</span>
+            <span id="autoRefreshText">Auto-Refresh: ON</span>
+        </button>
+        <span class="dd-refresh-hint" id="autoRefreshHint">Real-time: new requests and delay updates appear without reload.</span>
+    </div>
+
+    <!-- 3. Primary stats -->
+    <div class="dd-grid-4">
+        <a href="#blood-requests" class="dd-stat s-total">
+            <div class="dd-stat-top">
+                <span class="dd-stat-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </span>
+                <span class="dd-go">View →</span>
+            </div>
+            <div class="dd-num" id="donorStatTotal">{{ total_notifications }}</div>
+            <div class="dd-lbl">Total Requests</div>
+        </a>
+        <a href="#blood-requests" class="dd-stat s-pending">
+            <div class="dd-stat-top">
+                <span class="dd-stat-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </span>
+                <span class="dd-go">Respond →</span>
+            </div>
+            <div class="dd-num" id="donorStatPending">{{ pending_count }}</div>
+            <div class="dd-lbl">Pending</div>
+        </a>
+        <a href="#your-responses" class="dd-stat s-accepted">
+            <div class="dd-stat-top">
+                <span class="dd-stat-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <span class="dd-go">View →</span>
+            </div>
+            <div class="dd-num" id="donorStatAccepted">{{ accepted_count }}</div>
+            <div class="dd-lbl">Accepted</div>
+        </a>
+        <a href="#your-responses" class="dd-stat s-rejected">
+            <div class="dd-stat-top">
+                <span class="dd-stat-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                </span>
+                <span class="dd-go">View →</span>
+            </div>
+            <div class="dd-num" id="donorStatRejected">{{ rejected_count }}</div>
+            <div class="dd-lbl">Declined</div>
+        </a>
+    </div>
+
+    <!-- 4. Donation metrics -->
+    <div class="dd-grid-4">
+        <div class="dd-metric m-month">
+            <span class="dd-metric-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.4 0 .8.2 1 .5C15.2 6 21 12.2 21 16.2A9 9 0 0 1 3 16.2C3 12.2 8.8 6 11 3c.2-.3.6-.5 1-.5z"/></svg>
+            </span>
+            <div>
+                <div class="dd-num">{{ this_month_count }}</div>
+                <div class="dd-lbl">This Month</div>
+            </div>
+        </div>
+        <div class="dd-metric m-last">
+            <span class="dd-metric-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </span>
+            <div>
+                <div class="dd-num">{% if last_donation_date %}{{ last_donation_date|date:"d M Y" }}{% else %}Not provided{% endif %}</div>
+                <div class="dd-lbl">Last Donation</div>
+            </div>
+        </div>
+        <div class="dd-metric m-life">
+            <span class="dd-metric-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </span>
+            <div>
+                <div class="dd-num">{{ lifetime_count }}</div>
+                <div class="dd-lbl">Lifetime</div>
+            </div>
+        </div>
+        <div class="dd-metric m-elig {% if eligibility_status == 'cooling_off' %}wait{% endif %}">
+            <span class="dd-metric-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </span>
+            <div style="min-width: 0; width: 100%;">
+                <div class="dd-num">{% if eligibility_status == 'unknown' %}No info{% elif eligibility_status == 'eligible' or days_until_eligible == 0 %}Now{% else %}{{ days_until_eligible }} day{{ days_until_eligible|pluralize }}{% endif %}</div>
+                <div class="dd-lbl">{% if eligibility_status == 'cooling_off' %}Eligible In{% elif eligibility_status == 'eligible' %}Eligible{% else %}Eligibility{% endif %}</div>
+                <div class="dd-elig-bar" aria-hidden="true"><i style="width: {% widthratio eligibility_progress 1 100 %}%;"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Working area -->
+    <div class="dd-cols-3">
+
+        <!-- 5a. Nearby blood requests -->
+        <div class="dd-col" id="blood-requests">
+            <div class="dd-card">
+                <div class="dd-head">
+                    <span class="dd-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    <div>
+                        <h3>Nearby Blood Requests</h3>
+                        <p>Pending requests matched to you</p>
+                    </div>
+                    <span class="dd-head-right dd-count-pill">{{ nearby_requests|length }}</span>
+                </div>
+
+                {% if not has_profile %}
+                <div class="dd-empty-sm">
+                    Your donor profile isn't set up yet, so we can't match you with requests.
+                    <br><a class="dd-link" href="{% url 'donor_profile_edit' %}">Complete your profile →</a>
+                </div>
+                {% elif nearby_requests %}
+                <div class="dd-nearby-list" id="nearbyRequestsList">
+                    {% for notification in nearby_requests %}
+                    <div class="nearby-row {% if notification.blood_request.urgency == 'critical' %}crit{% endif %}" data-request-id="{{ notification.blood_request.id }}">
+                        <div class="dd-row-top">
+                            <span class="dd-blood-chip">{{ notification.blood_request.blood_group }}</span>
+                            <div class="dd-row-main">
+                                <div class="dd-row-title">{{ notification.hospital_name|default:notification.location_label|default:"Hospital" }}</div>
+                                <div class="dd-row-meta">
+                                    <span>#{{ notification.blood_request.id }}</span>
+                                    <span>{{ notification.blood_request.units_needed }} unit{{ notification.blood_request.units_needed|pluralize }}</span>
+                                    {% if notification.distance_km %}
+                                    <span>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        {{ notification.distance_km }} km
+                                    </span>
+                                    {% elif notification.location_label %}
+                                    <span>{{ notification.location_label }}</span>
+                                    {% endif %}
+                                    <span>{{ notification.blood_request.created_at|date:"d M, H:i" }}</span>
+                                </div>
+                            </div>
+                            <span class="dd-urg {{ notification.blood_request.urgency }}">{{ notification.blood_request.get_urgency_display }}</span>
+                        </div>
+                        <div class="dd-row-actions" id="nearby-actions-{{ notification.blood_request.id }}">
+                            <button type="button" class="dd-btn-sm accept" onclick="respondToRequest({{ notification.blood_request.id }}, 'accepted')">Accept</button>
+                            <button type="button" class="dd-btn-sm reject" onclick="respondToRequest({{ notification.blood_request.id }}, 'rejected')">Reject</button>
+                            <a class="dd-btn-sm ghost" href="#notification-{{ notification.blood_request.id }}">View Details</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="dd-empty-sm">
+                    No pending requests right now. We'll notify you the moment a patient near you needs {% if donor_profile.blood_group %}{{ donor_profile.blood_group }}{% else %}your blood group{% endif %}.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 5b. Recent activity -->
+        <div class="dd-col">
+            <div class="dd-card">
+                <div class="dd-head">
+                    <span class="dd-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>
+                    </span>
+                    <div>
+                        <h3>Recent Activity</h3>
+                        <p>Your latest actions</p>
+                    </div>
+                </div>
+                {% if recent_activity %}
+                <div class="dd-timeline">
+                    {% for item in recent_activity %}
+                    <div class="dd-act">
+                        <span class="dd-act-dot k-{{ item.kind }}" aria-hidden="true">
+                            {% if item.kind == 'response' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            {% elif item.kind == 'profile' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                            {% elif item.kind == 'account' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                            {% else %}
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.4 0 .8.2 1 .5C15.2 6 21 12.2 21 16.2A9 9 0 0 1 3 16.2C3 12.2 8.8 6 11 3c.2-.3.6-.5 1-.5z"/></svg>
+                            {% endif %}
+                        </span>
+                        <div class="dd-act-body">
+                            <div class="dd-act-title">{{ item.title }}</div>
+                            <div class="dd-act-msg">{{ item.message }}</div>
+                            <div class="dd-act-time">{{ item.at|date:"d M Y, H:i" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="dd-empty-sm">No activity yet. Your responses and updates will show up here.</div>
+                {% endif %}
+
+                <div class="dd-quote">
+                    <p>“The blood you donate gives someone another chance at life.”</p>
+                    <small>One donation can help save up to three lives.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5c. Emergency + tips -->
+        <div class="dd-col dd-col-3">
+            {% if emergency_request %}
+            <div class="dd-card dd-emergency">
+                <div class="dd-head">
+                    <span class="dd-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    </span>
+                    <div>
+                        <h3>Emergency Request</h3>
+                        <p>Needs a donor urgently</p>
+                    </div>
+                </div>
+                <div class="dd-emg-grid">
+                    <div class="dd-emg-box">
+                        <div class="k">Blood group</div>
+                        <div class="v blood">{{ emergency_request.blood_request.blood_group }}</div>
+                    </div>
+                    <div class="dd-emg-box">
+                        <div class="k">Units</div>
+                        <div class="v">{{ emergency_request.blood_request.units_needed }}</div>
+                    </div>
+                    <div class="dd-emg-box">
+                        <div class="k">Hospital</div>
+                        <div class="v" title="{{ emergency_request.hospital_name }}">{{ emergency_request.hospital_name|default:"Hospital" }}</div>
+                    </div>
+                    <div class="dd-emg-box">
+                        <div class="k">{% if emergency_request.distance_km %}Distance{% else %}Urgency{% endif %}</div>
+                        <div class="v">{% if emergency_request.distance_km %}{{ emergency_request.distance_km }} km{% else %}{{ emergency_request.blood_request.get_urgency_display }}{% endif %}</div>
+                    </div>
+                </div>
+                <div class="dd-row-actions" id="emergency-actions-{{ emergency_request.blood_request.id }}">
+                    {% if emergency_request.has_responded %}
+                    <span class="dd-row-state {{ emergency_request.response_status }}">You {{ emergency_request.response_status }} this request</span>
+                    {% else %}
+                    <button type="button" class="dd-btn-sm accept" onclick="respondToRequest({{ emergency_request.blood_request.id }}, 'accepted')">Accept &amp; Donate</button>
+                    <a class="dd-btn-sm ghost" href="#notification-{{ emergency_request.blood_request.id }}">Details</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="dd-card">
+                <div class="dd-head">
+                    <span class="dd-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>
+                    </span>
+                    <div>
+                        <h3>Donation Tips</h3>
+                        <p>Be ready before you go</p>
+                    </div>
+                </div>
+                <div class="dd-tips">
+                    <div class="dd-tip">
+                        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                        Drink extra water in the 24 hours before donating.
+                    </div>
+                    <div class="dd-tip">
+                        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                        Eat an iron-rich meal and avoid fatty food.
+                    </div>
+                    <div class="dd-tip">
+                        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                        Sleep well and carry a valid photo ID.
+                    </div>
+                    <div class="dd-tip">
+                        <span class="dd-tick" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+                        Rest for 10 minutes after donating, then snack.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Below the fold: history + impact -->
+    <div class="dd-cols-2">
+        <div class="dd-card">
+            <div class="dd-head">
+                <span class="dd-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </span>
+                <div>
+                    <h3>Donation History</h3>
+                    <p>Requests you accepted and completed</p>
+                </div>
+                <a class="dd-head-right dd-link" href="{% url 'donor_donation_history' %}">Full history →</a>
+            </div>
+            {% if donation_history %}
+            <div class="dd-table-wrap">
+                <table class="dd-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Blood group</th>
+                            <th>Units</th>
+                            <th>Hospital</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in donation_history %}
+                        <tr>
+                            <td>{{ row.date|date:"d M Y" }}</td>
+                            <td class="dd-td-blood">{{ row.blood_group }}</td>
+                            <td>{{ row.units }}</td>
+                            <td>{{ row.hospital }}</td>
+                            <td><span class="dd-tag">{{ row.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="dd-empty-sm">No donations recorded yet. Accept a nearby request to get started.</div>
+            {% endif %}
+        </div>
+
+        <div class="dd-card">
+            <div class="dd-head">
+                <span class="dd-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </span>
+                <div>
+                    <h3>Your Impact</h3>
+                    <p>What your donations add up to</p>
+                </div>
+            </div>
+            <div class="dd-impact-grid">
+                <div class="dd-impact">
+                    <div class="dd-num">{{ lives_helped }}</div>
+                    <div class="dd-lbl">Lives Helped</div>
+                </div>
+                <div class="dd-impact">
+                    <div class="dd-num">{{ lifetime_count }}</div>
+                    <div class="dd-lbl">Donations</div>
+                </div>
+                <div class="dd-impact">
+                    <div class="dd-num">{{ emergency_responses }}</div>
+                    <div class="dd-lbl">Emergency Responses</div>
+                </div>
+                <div class="dd-impact">
+                    <div class="dd-num">{{ accepted_count }}</div>
+                    <div class="dd-lbl">Requests Accepted</div>
+                </div>
+            </div>
+            <div class="dd-chart-box"><canvas id="chartDonorMonths12"></canvas></div>
+        </div>
+    </div>
+
+    <!-- CTA cards -->
+    <div class="dd-cta-grid">
+        <a href="#blood-requests" class="dd-cta">
+            <span class="dd-cta-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span>
+                <span class="t">Make a Bigger Impact</span>
+                <span class="s">Answer a pending request near you today.</span>
+            </span>
+        </a>
+        <a href="{% url 'donor_profile' %}" class="dd-cta">
+            <span class="dd-cta-ico teal" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </span>
+            <span>
+                <span class="t">Blood Donation Saves Lives</span>
+                <span class="s">Keep your profile and availability up to date.</span>
+            </span>
+        </a>
+    </div>
+
+    <!-- My responses -->
+    <div class="dd-card" id="your-responses">
+        <div class="dd-head">
+            <span class="dd-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
+            <div>
+                <h3>My Responses</h3>
+                <p>Requests you have already answered</p>
+            </div>
+            <span class="dd-head-right dd-count-pill">{{ responded_list|length }}</span>
+        </div>
+        {% if responded_list %}
+        <div class="dd-resp-list">
+            {% for notification in responded_list %}
+            <div class="response-item-card" data-request-id="{{ notification.blood_request.id }}">
+                <span class="dd-blood-chip">{{ notification.blood_request.blood_group }}</span>
+                <div class="dd-row-main">
+                    <div class="dd-row-title">{{ notification.hospital_name|default:"Hospital" }} · #{{ notification.blood_request.id }}</div>
+                    <div class="dd-row-meta">
+                        <span>{{ notification.blood_request.units_needed }} unit{{ notification.blood_request.units_needed|pluralize }}</span>
+                        <span class="dd-urg {{ notification.blood_request.urgency }}">{{ notification.blood_request.get_urgency_display }}</span>
+                        {% if notification.distance_km %}<span>{{ notification.distance_km }} km</span>{% endif %}
+                        <span>{{ notification.blood_request.created_at|date:"d M Y, H:i" }}</span>
+                    </div>
+                </div>
+                <span class="status-box {{ notification.response_status }}">
+                    {% if notification.response_status == 'accepted' %}Accepted{% else %}Declined{% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="dd-empty-sm">
+            You haven't responded to any request yet.
+            <br><a class="dd-link" href="#blood-requests">View blood requests →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- All blood requests (full cards — JS targets live here) -->
+    <div class="dd-card dd-section-gap" id="all-requests">
+        <div class="dd-head">
+            <span class="dd-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="4" cy="19" r="1.5"/></svg>
+            </span>
+            <div>
+                <h3>All Blood Requests</h3>
+                <p>Every request you were notified about</p>
+            </div>
+            <span class="dd-head-right dd-count-pill">{{ total_notifications }}</span>
+        </div>
+
+        {% if not has_profile %}
+        <div class="no-notifications">
+            <h3>Profile setup required</h3>
+            <p>You don't have a donor profile yet. Add your phone number, blood group and availability so we can match you with nearby requests.</p>
+            <p><a href="{% url 'donor_profile_edit' %}">Complete your profile →</a></p>
+        </div>
+        {% elif notifications %}
+        <div class="blood-requests-grid" id="bloodRequestsGrid">
+            {% for notification in notifications %}
+            <div class="notification-card urgency-{{ notification.blood_request.urgency }} {% if notification.has_responded %}responded{% endif %}" id="notification-{{ notification.blood_request.id }}">
+                <div class="notification-header">
+                    <span class="notification-title">Blood Request #{{ notification.blood_request.id }}</span>
+                    <span class="badge badge-{{ notification.blood_request.urgency }}">{{ notification.blood_request.get_urgency_display }} Priority</span>
+                </div>
+                <div class="notification-body">
+                    <div class="info-row">
+                        <div class="info-item">
+                            <span class="info-label">Blood group</span>
+                            <span class="info-value blood-value">{{ notification.blood_request.blood_group }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Units needed</span>
+                            <span class="info-value">{{ notification.blood_request.units_needed }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Hospital</span>
+                            <span class="info-value">{{ notification.hospital_name|default:"Hospital" }}</span>
+                        </div>
+                        {% if notification.distance_km %}
+                        <div class="info-item">
+                            <span class="info-label">Distance</span>
+                            <span class="info-value">{{ notification.distance_km }} km</span>
+                        </div>
+                        {% endif %}
+                        <div class="info-item">
+                            <span class="info-label">Created</span>
+                            <span class="info-value">{{ notification.blood_request.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% if notification.blood_request.note %}
+                    <div class="notification-note"><strong>Note:</strong> {{ notification.blood_request.note }}</div>
+                    {% endif %}
+                    <p class="notification-meta">Notified: {{ notification.created_at|date:"M d, Y H:i" }}{% if notification.location_label %} · {{ notification.location_label }}{% endif %}</p>
+                </div>
+                <div id="actions-{{ notification.blood_request.id }}">
+                    {% if notification.has_responded %}
+                    <div class="response-status {{ notification.response_status }}">
+                        You {{ notification.response_status }} this request
+                    </div>
+                    {% if notification.response_status == 'accepted' %}
+                    <button type="button" class="btn-delay" onclick="openDelayModal({{ notification.blood_request.id }})">Report Delay (can't come in time)</button>
+                    {% endif %}
+                    {% else %}
+                    <div class="notification-actions">
+                        <button class="btn-accept" onclick="respondToRequest({{ notification.blood_request.id }}, 'accepted')">Accept &amp; Donate</button>
+                        <button class="btn-reject" onclick="respondToRequest({{ notification.blood_request.id }}, 'rejected')">Can't Donate</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-notifications">
+            <h3>No notifications yet</h3>
+            <p>You'll see blood requests here when there's a match for your blood group.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Resolved delays -->
+    <div class="dd-card dd-section-gap" id="resolvedDelaysCard" {% if not resolved_delays %}style="display: none;"{% endif %}>
+        <div class="dd-head">
+            <span class="dd-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
+            <div>
+                <h3>Delay Reasons Accepted</h3>
+                <p>Admin reviewed and accepted these delays</p>
+            </div>
+        </div>
+        <div id="resolvedDelaysContainer">
+            {% for delay in resolved_delays %}
+            <div class="delay-resolved-msg" data-request-id="{{ delay.request_id }}">
+                Your delay reason for Request #{{ delay.request_id }} has been accepted by admin.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Admin accepted delay reason modal (donor side only) -->
+<div id="adminAcceptedDelayModal" class="delay-modal-overlay">
+    <div class="delay-modal-box">
+        <h3>Admin accepted your delay reason</h3>
+        <p id="adminAcceptedDelayMessage" class="modal-lead" style="color: #047857;">Your delay reason for Request #<span id="adminAcceptedDelayRequestId"></span> has been accepted by admin.</p>
+        <div class="delay-modal-actions">
+            <button type="button" class="delay-btn-ok" onclick="closeAdminAcceptedDelayModal()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delay report modal -->
+<div id="delayModal" class="delay-modal-overlay">
+    <div class="delay-modal-box">
+        <h3>Report Delay</h3>
+        <p class="modal-lead">You accepted but can't come within the expected time? Submit the reason below.</p>
+        <form id="delayForm">
+            <input type="hidden" id="delay_blood_request_id" name="blood_request_id">
+            <div class="form-group">
+                <label for="delay_stage">Stage</label>
+                <select id="delay_stage" name="stage" required>
+                    <option value="Search">Search</option>
+                    <option value="Acceptance" selected>Acceptance</option>
+                    <option value="Transit">Transit</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="delay_reason">Delay reason *</label>
+                <input type="text" id="delay_reason" name="delay_reason" maxlength="100" placeholder="e.g. Traffic, distance" required>
+            </div>
+            <div class="form-group">
+                <label for="delay_category">Category</label>
+                <select id="delay_category" name="delay_category">
+                    <option value="">-- Optional --</option>
+                    <option value="Supply">Supply</option>
+                    <option value="Distance">Distance</option>
+                    <option value="Ops">Ops</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="delay_minutes">Delay (minutes)</label>
+                <input type="number" id="delay_minutes" name="delay_minutes" min="0" placeholder="Optional">
+            </div>
+            <div class="delay-modal-actions">
+                <button type="button" class="delay-btn-cancel" onclick="closeDelayModal()">Cancel</button>
+                <button type="submit" class="delay-btn-save">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ chart_by_month|json_script:"chart-by-month" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        if (typeof Chart === 'undefined') return;
+        var byMonthEl = document.getElementById('chart-by-month');
+        var canvas = document.getElementById('chartDonorMonths12');
+        if (!byMonthEl || !canvas) return;
+        var byMonth = JSON.parse(byMonthEl.textContent);
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: byMonth.map(function (m) { return m.label; }),
+                datasets: [{
+                    label: 'Donations',
+                    data: byMonth.map(function (m) { return m.count; }),
+                    backgroundColor: 'rgba(239, 43, 45, 0.8)',
+                    borderRadius: 4,
+                    maxBarThickness: 14
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                resizeDelay: 50,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 8 }, color: '#94A3B8', maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
+                    y: { beginAtZero: true, ticks: { precision: 0, font: { size: 8 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' } }
+                }
+            }
+        });
+    })();
+</script>
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const c = cookies[i].trim();
+                if (c.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(c.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    function escapeHtml(s) {
+        if (s == null) return '';
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    function collectResponseButtons(bloodRequestId) {
+        var buttons = [];
+        ['actions-', 'nearby-actions-', 'emergency-actions-'].forEach(function (prefix) {
+            var el = document.getElementById(prefix + bloodRequestId);
+            if (el) {
+                buttons = buttons.concat(Array.prototype.slice.call(el.querySelectorAll('button')));
+            }
+        });
+        return buttons;
+    }
+
+    async function respondToRequest(bloodRequestId, response) {
+        var buttons = collectResponseButtons(bloodRequestId);
+        buttons.forEach(function (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+        });
+        try {
+            const res = await fetch('{% url "donor_respond" %}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ blood_request_id: bloodRequestId, response: response })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                const statusClass = response === 'accepted' ? 'accepted' : 'rejected';
+                const statusText = response === 'accepted'
+                    ? (data.fulfilled ? 'accepted — request fulfilled' : 'accepted')
+                    : 'rejected';
+                var actionsDiv = document.getElementById('actions-' + bloodRequestId);
+                if (actionsDiv) {
+                    var html = '<div class="response-status ' + statusClass + '">You ' + statusText + ' this request</div>';
+                    if (response === 'accepted') {
+                        html += '<button type="button" class="btn-delay" onclick="openDelayModal(' + bloodRequestId + ')">Report Delay (can\'t come in time)</button>';
+                    }
+                    actionsDiv.innerHTML = html;
+                }
+                var card = document.getElementById('notification-' + bloodRequestId);
+                if (card) card.classList.add('responded');
+                var stateHtml = '<span class="dd-row-state ' + statusClass + '">You ' + statusText + ' this request</span>';
+                var nearbyActions = document.getElementById('nearby-actions-' + bloodRequestId);
+                if (nearbyActions) {
+                    nearbyActions.innerHTML = stateHtml +
+                        '<a class="dd-btn-sm ghost" href="#notification-' + bloodRequestId + '">View Details</a>';
+                    var row = nearbyActions.closest('.nearby-row');
+                    if (row) row.classList.add('done');
+                }
+                var emergencyActions = document.getElementById('emergency-actions-' + bloodRequestId);
+                if (emergencyActions) emergencyActions.innerHTML = stateHtml;
+            } else {
+                throw new Error(data.message || 'Failed');
+            }
+        } catch (e) {
+            buttons.forEach(function (btn) { btn.disabled = false; btn.style.opacity = '1'; });
+            alert('Error: ' + (e.message || e));
+        }
+    }
+
+    function openDelayModal(bloodRequestId) {
+        document.getElementById('delay_blood_request_id').value = bloodRequestId;
+        document.getElementById('delayModal').classList.add('show');
+    }
+    function closeDelayModal() {
+        document.getElementById('delayModal').classList.remove('show');
+    }
+    function closeAdminAcceptedDelayModal() {
+        document.getElementById('adminAcceptedDelayModal').classList.remove('show');
+    }
+
+    document.getElementById('delayForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var bloodRequestId = document.getElementById('delay_blood_request_id').value;
+        var payload = {
+            blood_request_id: parseInt(bloodRequestId, 10),
+            stage: document.getElementById('delay_stage').value,
+            delay_reason: document.getElementById('delay_reason').value.trim(),
+            delay_category: document.getElementById('delay_category').value || null,
+            delay_minutes: document.getElementById('delay_minutes').value ? parseInt(document.getElementById('delay_minutes').value, 10) : null
+        };
+        try {
+            var res = await fetch('{% url "donor_submit_delay" %}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.status === 'ok') {
+                closeDelayModal();
+                document.getElementById('delay_reason').value = '';
+                document.getElementById('delay_minutes').value = '';
+                alert('Delay reason submitted. Admin will be notified.');
+            } else {
+                alert(data.message || 'Failed to submit');
+            }
+        } catch (err) {
+            alert('Error: ' + (err.message || err));
+        }
+    });
+    document.getElementById('delayModal').addEventListener('click', function (e) {
+        if (e.target === this) closeDelayModal();
+    });
+    document.getElementById('adminAcceptedDelayModal').addEventListener('click', function (e) {
+        if (e.target === this) closeAdminAcceptedDelayModal();
+    });
+
+    var autoRefreshEnabled = true;
+    var pollInterval;
+    var POLL_SECONDS = 8;
+    var lastResolvedSince = null;
+    var shownResolvedRequestIds = {};
+
+    function formatDateTime(isoStr) {
+        if (!isoStr) return '—';
+        try {
+            var d = new Date(isoStr);
+            var m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' ' +
+                String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        } catch (e) { return isoStr; }
+    }
+
+    function buildNotificationCard(item) {
+        var responded = item.has_responded;
+        var status = item.response_status;
+        var urgency = item.urgency || 'medium';
+        var badgeClass = 'badge-' + urgency;
+        var noteHtml = item.note ? '<div class="notification-note"><strong>Note:</strong> ' + escapeHtml(item.note) + '</div>' : '';
+        var actionsHtml;
+        if (responded) {
+            var statusClass = status === 'accepted' ? 'accepted' : 'rejected';
+            var statusText = status === 'accepted' ? 'accepted' : 'rejected';
+            actionsHtml = '<div class="response-status ' + statusClass + '">You ' + statusText + ' this request</div>';
+            if (status === 'accepted') {
+                actionsHtml += '<button type="button" class="btn-delay" onclick="openDelayModal(' + item.id + ')">Report Delay (can\'t come in time)</button>';
+            }
+        } else {
+            actionsHtml = '<div class="notification-actions">' +
+                '<button class="btn-accept" onclick="respondToRequest(' + item.id + ', \'accepted\')">Accept &amp; Donate</button>' +
+                '<button class="btn-reject" onclick="respondToRequest(' + item.id + ', \'rejected\')">Can\'t Donate</button>' +
+                '</div>';
+        }
+        var cardClass = 'notification-card urgency-' + urgency + (responded ? ' responded' : '');
+        return '<div class="' + cardClass + '" id="notification-' + item.id + '">' +
+            '<div class="notification-header">' +
+            '<span class="notification-title">Blood Request #' + item.id + '</span>' +
+            '<span class="badge ' + badgeClass + '">' + escapeHtml(item.urgency_display || item.urgency || '') + ' Priority</span>' +
+            '</div>' +
+            '<div class="notification-body">' +
+            '<div class="info-row">' +
+            '<div class="info-item"><span class="info-label">Blood group</span><span class="info-value blood-value">' + escapeHtml(item.blood_group) + '</span></div>' +
+            '<div class="info-item"><span class="info-label">Units needed</span><span class="info-value">' + item.units_needed + '</span></div>' +
+            '<div class="info-item"><span class="info-label">Created</span><span class="info-value">' + formatDateTime(item.created_at) + '</span></div>' +
+            '</div>' + noteHtml +
+            '<p class="notification-meta">Notified: ' + formatDateTime(item.notification_created_at) + '</p>' +
+            '</div>' +
+            '<div id="actions-' + item.id + '">' + actionsHtml + '</div>' +
+            '</div>';
+    }
+
+    function buildNearbyRow(item) {
+        var urgency = item.urgency || 'medium';
+        return '<div class="nearby-row' + (urgency === 'critical' ? ' crit' : '') + '" data-request-id="' + item.id + '">' +
+            '<div class="dd-row-top">' +
+            '<span class="dd-blood-chip">' + escapeHtml(item.blood_group) + '</span>' +
+            '<div class="dd-row-main">' +
+            '<div class="dd-row-title">Blood Request #' + item.id + '</div>' +
+            '<div class="dd-row-meta">' +
+            '<span>' + item.units_needed + ' unit(s)</span>' +
+            '<span>' + formatDateTime(item.created_at) + '</span>' +
+            '</div></div>' +
+            '<span class="dd-urg ' + urgency + '">' + escapeHtml(item.urgency_display || urgency) + '</span>' +
+            '</div>' +
+            '<div class="dd-row-actions" id="nearby-actions-' + item.id + '">' +
+            '<button type="button" class="dd-btn-sm accept" onclick="respondToRequest(' + item.id + ', \'accepted\')">Accept</button>' +
+            '<button type="button" class="dd-btn-sm reject" onclick="respondToRequest(' + item.id + ', \'rejected\')">Reject</button>' +
+            '<a class="dd-btn-sm ghost" href="#notification-' + item.id + '">View Details</a>' +
+            '</div></div>';
+    }
+
+    function injectNewNearbyRow(item) {
+        var list = document.getElementById('nearbyRequestsList');
+        if (!list || item.has_responded) return;
+        if (list.querySelector('.nearby-row[data-request-id="' + item.id + '"]')) return;
+        var holder = document.createElement('div');
+        holder.innerHTML = buildNearbyRow(item);
+        list.insertBefore(holder.firstElementChild, list.firstChild);
+    }
+
+    function doDonorPoll() {
+        if (!autoRefreshEnabled) return;
+        if (lastResolvedSince === null) lastResolvedSince = new Date().toISOString();
+        var url = '{% url "api_donor_poll" %}?resolved_since=' + encodeURIComponent(lastResolvedSince);
+        fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var totalEl = document.getElementById('donorStatTotal');
+                var pendingEl = document.getElementById('donorStatPending');
+                var acceptedEl = document.getElementById('donorStatAccepted');
+                var rejectedEl = document.getElementById('donorStatRejected');
+                if (totalEl) totalEl.textContent = data.total_notifications;
+                if (pendingEl) pendingEl.textContent = data.pending_count;
+                if (acceptedEl) acceptedEl.textContent = data.accepted_count;
+                if (rejectedEl) rejectedEl.textContent = data.rejected_count;
+                var badge = document.getElementById('donorNotifBadge');
+                if (badge) {
+                    if (data.pending_count > 0) {
+                        badge.textContent = data.pending_count;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                var grid = document.getElementById('bloodRequestsGrid');
+                if (grid && data.notifications && data.notifications.length) {
+                    var existingIds = {};
+                    var children = grid.querySelectorAll('[id^="notification-"]');
+                    for (var i = 0; i < children.length; i++) {
+                        var id = children[i].id.replace('notification-', '');
+                        existingIds[id] = true;
+                    }
+                    var noEmpty = grid.querySelector('.no-notifications');
+                    if (noEmpty) noEmpty.remove();
+                    for (var j = 0; j < data.notifications.length; j++) {
+                        var item = data.notifications[j];
+                        if (!existingIds[String(item.id)]) {
+                            existingIds[String(item.id)] = true;
+                            var card = document.createElement('div');
+                            card.innerHTML = buildNotificationCard(item);
+                            grid.insertBefore(card.firstElementChild, grid.firstChild);
+                            injectNewNearbyRow(item);
+                        }
+                    }
+                } else if (data.notifications && data.notifications.length && !grid) {
+                    var container = document.getElementById('all-requests');
+                    if (container) {
+                        var emptyState = container.querySelector('.no-notifications');
+                        var newGrid = document.createElement('div');
+                        newGrid.className = 'blood-requests-grid';
+                        newGrid.id = 'bloodRequestsGrid';
+                        for (var k = 0; k < data.notifications.length; k++) {
+                            var c = document.createElement('div');
+                            c.innerHTML = buildNotificationCard(data.notifications[k]);
+                            newGrid.appendChild(c.firstElementChild);
+                            injectNewNearbyRow(data.notifications[k]);
+                        }
+                        if (emptyState) container.replaceChild(newGrid, emptyState);
+                        else container.appendChild(newGrid);
+                    }
+                }
+                if (data.resolved_delays && data.resolved_delays.length) {
+                    var delayContainer = document.getElementById('resolvedDelaysContainer');
+                    var delayCard = document.getElementById('resolvedDelaysCard');
+                    if (delayContainer && delayCard) {
+                        for (var r = 0; r < data.resolved_delays.length; r++) {
+                            var rd = data.resolved_delays[r];
+                            var key = rd.request_id + '_' + (rd.resolved_at || '');
+                            if (!shownResolvedRequestIds[key]) {
+                                shownResolvedRequestIds[key] = true;
+                                var div = document.createElement('div');
+                                div.className = 'delay-resolved-msg';
+                                div.setAttribute('data-request-id', rd.request_id);
+                                div.textContent = 'Your delay reason for Request #' + rd.request_id + ' has been accepted by admin.';
+                                delayContainer.appendChild(div);
+                                delayCard.style.display = 'block';
+                            }
+                        }
+                    }
+                }
+                applyDonorSearchFilter();
+            })
+            .catch(function () {});
+    }
+
+    function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(doDonorPoll, POLL_SECONDS * 1000);
+        doDonorPoll();
+    }
+
+    function toggleAutoRefresh() {
+        autoRefreshEnabled = !autoRefreshEnabled;
+        var btn = document.getElementById('autoRefreshBtn');
+        var icon = document.getElementById('autoRefreshIcon');
+        var text = document.getElementById('autoRefreshText');
+        var hint = document.getElementById('autoRefreshHint');
+        var bar = document.getElementById('autoRefreshBar');
+        if (autoRefreshEnabled) {
+            btn.classList.remove('off'); btn.classList.add('on');
+            if (bar) bar.classList.remove('paused');
+            icon.textContent = '🔄';
+            text.textContent = 'Auto-Refresh: ON';
+            hint.textContent = 'Real-time: new requests and delay updates appear without reload.';
+            startPolling();
+        } else {
+            btn.classList.remove('on'); btn.classList.add('off');
+            if (bar) bar.classList.add('paused');
+            icon.textContent = '⏸';
+            text.textContent = 'Auto-Refresh: OFF';
+            hint.textContent = 'Turn on to see new requests in real time.';
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+        }
+    }
+
+    /* Topbar search (base.html) filters request rows and cards */
+    function applyDonorSearchFilter() {
+        var input = document.getElementById('donorSearchInput');
+        if (!input) return;
+        var q = (input.value || '').trim().toLowerCase();
+        var targets = document.querySelectorAll('.nearby-row, .notification-card, .response-item-card');
+        for (var i = 0; i < targets.length; i++) {
+            var el = targets[i];
+            var match = !q || (el.textContent || '').toLowerCase().indexOf(q) !== -1;
+            el.classList.toggle('dd-hidden-by-search', !match);
+        }
+    }
+
+    window.addEventListener('load', function () {
+        var searchInput = document.getElementById('donorSearchInput');
+        if (searchInput && !searchInput.readOnly) {
+            searchInput.addEventListener('input', applyDonorSearchFilter);
+        }
+        startPolling();
+    });
+</script>
+{% endblock %}
