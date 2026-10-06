@@ -83,9 +83,8 @@ class AuthService {
         return {
           'success': false,
           'error':
-              'Cannot reach server. From AYH run: '
-              'python manage.py runserver 0.0.0.0:8000 '
-              '(and adb reverse tcp:8000 tcp:8000 for each emulator)',
+              'Cannot reach server at ${ApiConstants.baseUrl}. '
+              'Check network / firewall and that the API is running.',
         };
       }
 
@@ -153,7 +152,8 @@ class AuthService {
         return {
           'success': false,
           'error':
-              'Cannot reach server. Run: python manage.py runserver 0.0.0.0:8000',
+              'Cannot reach server at ${ApiConstants.baseUrl}. '
+              'Check network / firewall and that the API is running.',
         };
       }
       return {'success': false, 'error': 'Google Sign-In failed'};
@@ -281,7 +281,8 @@ class AuthService {
         return {
           'success': false,
           'error':
-              'Cannot reach server. Run: python manage.py runserver 0.0.0.0:8000',
+              'Cannot reach server at ${ApiConstants.baseUrl}. '
+              'Check network / firewall and that the API is running.',
         };
       }
       return {'success': false, 'error': 'Registration failed'};
@@ -358,8 +359,8 @@ class AuthService {
         return {
           'success': false,
           'error':
-              'Cannot reach server. From AYH run: '
-              'python manage.py runserver 0.0.0.0:8000',
+              'Cannot reach server at ${ApiConstants.baseUrl}. '
+              'Check network / firewall and that the API is running.',
         };
       }
       return {'success': false, 'error': 'Request failed. Please try again.'};

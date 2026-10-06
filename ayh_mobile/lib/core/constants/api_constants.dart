@@ -1,23 +1,20 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
-
 class ApiConstants {
-  /// Production Django API on Render.
+  /// Production Django API (AWS).
   ///
   /// Override with:
-  /// --dart-define=API_BASE_URL=https://your-render-service.onrender.com/api/
+  /// --dart-define=API_BASE_URL=http://65.2.20.185/api/
   static const String _apiBaseUrlFromEnv = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: '',
   );
 
-  /// Default production host used for release APK builds
-  /// when API_BASE_URL is omitted.
-  static const String _defaultRenderApiBaseUrl =
-      'https://blood-450.onrender.com/api/';
+  /// Default host for debug + release when API_BASE_URL is omitted.
+  /// Web login: http://65.2.20.185/accounts/login/
+  /// Flutter API: http://65.2.20.185/api/
+  static const String _defaultProductionApiBaseUrl =
+      'http://65.2.20.185/api/';
 
-  /// Physical device on Wi-Fi:
+  /// Physical device / custom host:
   /// flutter run --dart-define=API_HOST=192.168.1.10
   static const String _apiHostFromEnv = String.fromEnvironment(
     'API_HOST',
@@ -33,9 +30,7 @@ class ApiConstants {
 
   static String? _cachedBaseUrl;
 
-  /// Android emulator → host PC localhost.
-  /// iOS simulator / desktop → 127.0.0.1.
-  /// Release / explicit API_BASE_URL → Render.
+  /// Default → AWS API. Override with API_BASE_URL / API_HOST.
   static String get baseUrl => _cachedBaseUrl ?? _defaultBaseUrl();
 
   static String _normalizeApiBase(String url) {
@@ -61,52 +56,38 @@ class ApiConstants {
         return _normalizeApiBase('$envHost/api');
       }
 
-      return 'https://$envHost/api/';
+      final envPort = _apiPortFromEnv.trim().isEmpty
+          ? '80'
+          : _apiPortFromEnv.trim();
+      if (envPort == '80' || envPort == '443') {
+        final scheme = envPort == '443' ? 'https' : 'http';
+        return '$scheme://$envHost/api/';
+      }
+      return 'http://$envHost:$envPort/api/';
     }
 
-    /// Production release APK → Render
-    if (kReleaseMode) {
-      return _defaultRenderApiBaseUrl;
-    }
-
-    final envPort = _apiPortFromEnv.trim().isEmpty
-        ? '8000'
-        : _apiPortFromEnv.trim();
-
-    if (kIsWeb) {
-      return 'http://127.0.0.1:$envPort/api/';
-    }
-
-    if (Platform.isAndroid) {
-      // Android emulator → host machine's localhost.
-      return 'http://10.0.2.2:$envPort/api/';
-    }
-
-    return 'http://127.0.0.1:$envPort/api/';
+    return _defaultProductionApiBaseUrl;
   }
 
-  /// Drop stale LAN IPs / localhost-only ports saved from old sessions.
+  /// Drop stale LAN / localhost / old Render URLs saved from prior sessions.
   static String? normalizeSavedUrl(String? saved) {
     if (saved == null || saved.isEmpty) return null;
 
     final envHost = _apiHostFromEnv.trim();
-
     if (envHost.isNotEmpty) return saved;
 
-    if (kReleaseMode) return saved;
+    if (_apiBaseUrlFromEnv.trim().isNotEmpty) {
+      return _normalizeApiBase(_apiBaseUrlFromEnv);
+    }
 
     final lower = saved.toLowerCase();
 
-    if (!kIsWeb && Platform.isAndroid) {
-      /// Port 8005 is often bound to 127.0.0.1 only.
-      /// Prefer the all-interfaces server on 8000.
-      if (lower.contains(':8005')) {
-        return 'http://10.0.2.2:8000/api/';
-      }
-
-      if (lower.contains('192.168.') || lower.contains('localhost')) {
-        return 'http://10.0.2.2:8000/api/';
-      }
+    if (lower.contains('10.0.2.2') ||
+        lower.contains('127.0.0.1') ||
+        lower.contains('localhost') ||
+        lower.contains('192.168.') ||
+        lower.contains('onrender.com')) {
+      return _defaultProductionApiBaseUrl;
     }
 
     return saved;
@@ -130,11 +111,7 @@ class ApiConstants {
   static String get prefsKeyApiBaseUrl => _prefsKeyApiBaseUrl;
 
   /// Ordered hosts for login/register probe.
-  ///
-  /// Android:
-  /// 1. 10.0.2.2:8000
-  /// 2. 127.0.0.1:8000 with adb reverse
-  /// 3. 8005 fallback
+  /// Default: AWS http://65.2.20.185/api/
   static Future<List<String>> candidateBaseUrls() async {
     final seen = <String>{};
 
@@ -155,17 +132,14 @@ class ApiConstants {
       return seen.toList();
     }
 
-    /// Release APK → Render
-    if (kReleaseMode) {
-      add(_defaultRenderApiBaseUrl);
-      return seen.toList();
-    }
-
     final envHost = _apiHostFromEnv.trim();
 
     if (envHost.isNotEmpty) {
       if (envHost.startsWith('http://') || envHost.startsWith('https://')) {
         add(_normalizeApiBase('$envHost/api'));
+      } else if (envPort == '80' || envPort == '443') {
+        final scheme = envPort == '443' ? 'https' : 'http';
+        add('$scheme://$envHost/api/');
       } else {
         add('http://$envHost:$envPort/api/');
       }
@@ -173,31 +147,7 @@ class ApiConstants {
       return seen.toList();
     }
 
-    if (!kIsWeb && Platform.isAndroid) {
-      /// All-interfaces Django port.
-      add('http://10.0.2.2:8000/api/');
-
-      /// Works with:
-      /// adb reverse tcp:8000 tcp:8000
-      add('http://127.0.0.1:8000/api/');
-
-      if (envPort != '8000') {
-        add('http://10.0.2.2:$envPort/api/');
-        add('http://127.0.0.1:$envPort/api/');
-      }
-
-      add('http://10.0.2.2:8005/api/');
-      add('http://127.0.0.1:8005/api/');
-    } else {
-      add('http://127.0.0.1:8000/api/');
-
-      if (envPort != '8000') {
-        add('http://127.0.0.1:$envPort/api/');
-      }
-
-      add('http://127.0.0.1:8005/api/');
-    }
-
+    add(_defaultProductionApiBaseUrl);
     add(baseUrl);
 
     return seen.toList();
