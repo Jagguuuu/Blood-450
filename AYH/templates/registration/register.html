@@ -2427,6 +2427,21 @@ svg.icon {
                             <input type="date" id="id_date_of_birth" name="date_of_birth" value="{{ form.date_of_birth.value|default:'' }}" placeholder="dd-mm-yyyy">
                         </div>
                     </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Become a blood donor? *</label>
+                        <p style="margin:0 0 8px;font-size:0.8rem;color:#64748B;">You can always opt in later from your dashboard if you skip for now.</p>
+                        <div style="display:flex;gap:18px;flex-wrap:wrap;">
+                            <label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#102A56;cursor:pointer;">
+                                <input type="radio" name="become_donor" value="yes" {% if form.become_donor.value != 'no' %}checked{% endif %} required>
+                                Yes, I'll donate
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-weight:700;color:#102A56;cursor:pointer;">
+                                <input type="radio" name="become_donor" value="no" {% if form.become_donor.value == 'no' %}checked{% endif %}>
+                                Not now
+                            </label>
+                        </div>
+                        <span class="field-error" data-field="become_donor"></span>
+                    </div>
                     <div class="form-group">
                         <label for="id_alternate_mobile">Alternate Mobile</label>
                         <div class="input-wrap">
@@ -2759,11 +2774,12 @@ svg.icon {
         (fields || []).forEach(function(f) { setStepError(f, ''); });
     }
     function validateStep1() {
-        clearStepErrors(['username', 'mobile', 'password', 'confirm_password']);
+        clearStepErrors(['username', 'mobile', 'password', 'confirm_password', 'become_donor']);
         var username = val('id_username');
         var mobile = val('id_mobile').replace(/\D/g, '');
         var password = document.getElementById('id_password').value || '';
         var confirm = document.getElementById('id_confirm_password').value || '';
+        var becomeDonor = radioVal('become_donor');
         var ok = true;
         if (!username) { setStepError('username', 'Required.'); ok = false; }
         if (!mobile) { setStepError('mobile', 'Required.'); ok = false; }
@@ -2771,6 +2787,7 @@ svg.icon {
         if (!password) { setStepError('password', 'Required.'); ok = false; }
         if (!confirm) { setStepError('confirm_password', 'Required.'); ok = false; }
         else if (password !== confirm) { setStepError('confirm_password', 'Passwords do not match.'); ok = false; }
+        if (!becomeDonor) { setStepError('become_donor', 'Please choose whether you want to become a donor.'); ok = false; }
         return ok;
     }
     function validateStep4() {
@@ -2988,7 +3005,11 @@ svg.icon {
             try { res = JSON.parse(xhr.responseText); } catch (err) { res = {}; }
             if (xhr.status === 200 && res.success) {
                 selectedBg = null;
-                // OTP step disabled — go straight to success / blood-group flow
+                if (res.step === 'user_home' && res.redirect) {
+                    window.location.href = res.redirect;
+                    return;
+                }
+                // Donor path — success / blood-group flow
                 bloodDonationModal.classList.remove('hidden');
             } else {
                 showErrors(res.errors || { __all__: res.message || 'Registration failed.' });

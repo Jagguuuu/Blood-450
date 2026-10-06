@@ -89,11 +89,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                     {"email": "This email is already registered. Please log in instead."}
                 )
 
-        # Full donor signup requires phone + blood group together.
+        # Phone alone is OK for non-donor signup (blood group added later via Become a Donor).
+        # Blood group without phone is not allowed.
         phone = (data.get('phone') or '').strip()
         blood_group = (data.get('blood_group') or '').strip()
-        if phone and not blood_group:
-            raise serializers.ValidationError({"blood_group": "Blood group is required with phone."})
         if blood_group and not phone:
             raise serializers.ValidationError({"phone": "Phone is required with blood group."})
         return data
@@ -111,6 +110,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if gender and gender not in dict(UserProfile.GENDER_CHOICES):
             gender = None
         is_available = validated_data.pop('is_available', True)
+        # Registering with a blood group means the user opted in as a donor —
+        # they must be matchable unless they later mark themselves busy in-app.
+        if blood_group:
+            is_available = True
         last_lat = validated_data.pop('last_lat', None)
         last_lng = validated_data.pop('last_lng', None)
         # GPS often has >6 decimals; DB columns are decimal_places=6.
@@ -176,12 +179,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         if phone or blood_group:
             coords_ok = last_lat is not None and last_lng is not None
+            availability_status = 'Available' if is_available else 'Busy'
             profile, created = DonorProfile.objects.get_or_create(
                 user=user,
                 defaults={
                     'phone': phone,
                     'blood_group': blood_group,
                     'is_available': is_available if is_available is not None else True,
+                    'availability_status': availability_status,
                     'city': city,
                     'last_lat': last_lat,
                     'last_lng': last_lng,
@@ -196,6 +201,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 if blood_group:
                     profile.blood_group = blood_group
                 profile.is_available = is_available if is_available is not None else profile.is_available
+                profile.availability_status = (
+                    'Available' if profile.is_available else 'Busy'
+                )
                 if city:
                     profile.city = city
                 if last_donation_date is not None:
@@ -327,6 +335,15 @@ class DonorProfileCreateSerializer(serializers.ModelSerializer):
         )
         if coords_provided:
             validated_data['location_updated_at'] = timezone.now()
+        # Keep is_available and availability_status in sync for matching.
+        if 'is_available' in validated_data:
+            validated_data['availability_status'] = (
+                'Available' if validated_data['is_available'] else 'Busy'
+            )
+        elif validated_data.get('blood_group'):
+            # Completing donor profile → start available for requests.
+            validated_data.setdefault('is_available', True)
+            validated_data.setdefault('availability_status', 'Available')
         instance = super().create(validated_data)
         # Seed from UserProfile only when client did not send a date.
         if instance.last_donation_date is None:
@@ -358,6 +375,10 @@ class DonorProfileCreateSerializer(serializers.ModelSerializer):
         )
         if coords_changing:
             validated_data['location_updated_at'] = timezone.now()
+        if 'is_available' in validated_data:
+            validated_data['availability_status'] = (
+                'Available' if validated_data['is_available'] else 'Busy'
+            )
         instance = super().update(instance, validated_data)
         if coords_changing and instance.last_lat is not None and instance.last_lng is not None:
             # Best-effort — coords are already saved; city/state are display-only.
@@ -377,10 +398,17 @@ class DonorProfileCreateSerializer(serializers.ModelSerializer):
         return instance
     
     def validate_phone(self, value):
-        """Accept any non-empty phone (allow all formats)."""
-        if not value or not str(value).strip():
+        """Phone required only when creating a brand-new profile without an existing number."""
+        if value is None:
+            return value
+        phone = str(value).strip()
+        if not phone:
+            # Allow blank on update/upsert when an existing profile already has a phone.
+            instance = getattr(self, 'instance', None)
+            if instance is not None and (instance.phone or '').strip():
+                return instance.phone
             raise serializers.ValidationError("Phone number is required")
-        return str(value).strip()
+        return phone
     
     def validate_last_lat(self, value):
         """Round GPS and ensure latitude is between -90 and 90."""

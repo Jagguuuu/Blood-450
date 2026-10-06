@@ -530,8 +530,8 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                         const SizedBox(height: 8),
                         Text(
                           _useLocation
-                              ? 'Only compatible donors within the chosen radius (with location set) will be notified.'
-                              : 'Compatible donors will be notified based on blood compatibility rules.',
+                              ? 'Only donors with the exact blood group within the chosen radius (with location set) will be notified.'
+                              : 'Only donors with the exact requested blood group will be notified.',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,

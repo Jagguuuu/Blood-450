@@ -12,9 +12,11 @@ import 'donor_my_responses_screen.dart';
 import 'donor_profile_screen.dart';
 import 'donor_notifications_screen.dart';
 import 'leaderboard_screen.dart';
+import 'create_profile_screen.dart';
 import '../support/support_chat_screen.dart';
 import '../../providers/whatsapp_chat_provider.dart';
 import '../../../data/models/notification.dart';
+import '../../widgets/donor_willing_dialog.dart';
 
 /// Response history record (accepted notifications). Used for charts/counters only —
 /// NOT for clinical 90-day eligibility (that uses DonorProfile.lastDonationDate).
@@ -488,6 +490,10 @@ class _DonorHomeScreenState extends State<DonorHomeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (!authProvider.hasCompletedDonorProfile) ...[
+                          _buildBecomeDonorBanner(context),
+                          const SizedBox(height: 20),
+                        ],
                         if (hasCriticalOpen) ...[
                           _buildEmergencyBanner(),
                           const SizedBox(height: 12),
@@ -1921,7 +1927,80 @@ class _DonorHomeScreenState extends State<DonorHomeScreen>
     );
   }
 
+  Widget _buildBecomeDonorBanner(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF5F5), Color(0xFFFFEBEE)],
+        ),
+        border: Border.all(color: const Color(0xFFFECACA)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            '“A single pint can save three lives — and the person you help might one day help someone you love.”',
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.45,
+              fontStyle: FontStyle.italic,
+              color: Color(0xFF7F1D1D),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'You\'re signed in as a user. Become a donor anytime — we\'ll reuse your phone and location from registration.',
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final go = await DonorWillingDialog.showReminder(context);
+              if (!context.mounted || !go) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CreateProfileScreen(),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.volunteer_activism_rounded),
+            label: const Text(
+              'Become a Donor',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCtaSection(BuildContext context) {
+    final isDonor = Provider.of<AuthProvider>(context, listen: false)
+        .hasCompletedDonorProfile;
     return Row(
       children: [
         Expanded(
@@ -1945,14 +2024,29 @@ class _DonorHomeScreenState extends State<DonorHomeScreen>
         Expanded(
           child: _ctaCard(
             context,
-            title: 'My Profile',
-            subtitle: 'Update details',
-            icon: Icons.person_rounded,
+            title: isDonor ? 'My Profile' : 'Become Donor',
+            subtitle: isDonor ? 'Update details' : 'Save lives today',
+            icon: isDonor
+                ? Icons.person_rounded
+                : Icons.volunteer_activism_rounded,
             color: const Color(0xFFB91C1C),
-            onTap: () {
+            onTap: () async {
+              if (isDonor) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DonorProfileScreen(),
+                  ),
+                );
+                return;
+              }
+              final go = await DonorWillingDialog.showReminder(context);
+              if (!context.mounted || !go) return;
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const DonorProfileScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const CreateProfileScreen(),
+                ),
               );
             },
           ),

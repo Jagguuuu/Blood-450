@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-Script to reset admin password to 'admin'
-Run: python reset_admin_password.py
+Script to ensure admin superuser exists and reset password to 'admin123'
 """
 import os
 import django
@@ -9,16 +8,21 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'AYH.settings')
 django.setup()
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 try:
-    user = User.objects.get(username='admin')
-    user.set_password('admin')
+    user, created = User.objects.get_or_create(
+        username='admin', 
+        defaults={'email': 'admin@example.com'}
+    )
+    user.set_password('admin123')
+    user.is_superuser = True
+    user.is_staff = True
     user.save()
-    print(f'SUCCESS: Password for user "{user.username}" has been reset to "admin"')
-    print(f'   You can now login with username: {user.username} and password: admin')
-except User.DoesNotExist:
-    print('ERROR: User "admin" does not exist')
-    print('   Creating superuser "admin" with password "admin"...')
-    user = User.objects.create_superuser('admin', '', 'admin')
-    print(f'SUCCESS: Created superuser "{user.username}" with password "admin"')
+    
+    action = "Created" if created else "Updated"
+    print(f"SUCCESS: {action} user 'admin' with password 'admin123'")
+except Exception as e:
+    print(f"ERROR: Failed to reset admin password: {e}")

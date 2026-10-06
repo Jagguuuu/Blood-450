@@ -91,11 +91,19 @@ class DonorLoginForm(AuthenticationForm):
 
 
 class DonorRegistrationForm(forms.Form):
-    """Registration form for donors."""
+    """Registration form for donors / users."""
     username = forms.CharField(max_length=150, label='Username', widget=forms.TextInput(attrs={'placeholder': 'Choose a username (you will use this to log in)', 'autocomplete': 'username'}))
     mobile = forms.CharField(max_length=15, label='Mobile Number', widget=forms.TextInput(attrs={'placeholder': 'e.g. 9618394701 or +919618394701'}))
     password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'placeholder': 'Create password'}), min_length=8)
     confirm_password = forms.CharField(label='Confirm Password', widget=forms.PasswordInput(attrs={'placeholder': 'Confirm password'}))
+
+    # Asked at registration; if "no", user can opt in later from the dashboard.
+    become_donor = forms.ChoiceField(
+        choices=[('yes', 'Yes, I want to become a blood donor'), ('no', 'Not now')],
+        required=True,
+        label='Become a blood donor?',
+        widget=forms.RadioSelect,
+    )
 
     GENDER_CHOICES = [('', '-- Select --'), ('M', 'Male'), ('F', 'Female'), ('O', 'Other')]
     gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, label='Gender')

@@ -1220,7 +1220,7 @@
             <h2>Welcome back, {{ user.get_full_name|default:user.username }}!</h2>
             <p class="dd-hero-sub">Every request you answer moves a patient closer to a second chance. Here's what needs you today.</p>
             <div class="dd-pills">
-                {% if has_profile and donor_profile.blood_group %}
+                {% if is_complete_donor and donor_profile.blood_group %}
                 <span class="dd-pill blood">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5c.4 0 .8.2 1 .5C15.2 6 21 12.2 21 16.2A9 9 0 0 1 3 16.2C3 12.2 8.8 6 11 3c.2-.3.6-.5 1-.5z"/></svg>
                     {{ donor_profile.blood_group }}
@@ -1265,6 +1265,18 @@
             <span>Small Acts Save Big Lives</span>
         </div>
     </section>
+
+    {% if not is_complete_donor %}
+    <section class="dd-card dd-section-gap" style="border-color:#FECACA;background:linear-gradient(135deg,#FFF7F7,#FFFFFF);">
+        <p style="margin:0 0 10px;font-style:italic;color:#7F1D1D;line-height:1.45;">
+            “A single pint can save three lives — and the person you help might one day help someone you love.”
+        </p>
+        <p style="margin:0 0 14px;color:#64748B;font-size:0.88rem;">
+            You're signed in as a user. Become a donor anytime — we'll reuse your phone and location from registration.
+        </p>
+        <a href="{% url 'become_donor' %}" class="dd-btn-sm accept" style="display:inline-flex;text-decoration:none;padding:10px 16px;">Become a Donor</a>
+    </section>
+    {% endif %}
 
     <!-- 2. Auto-refresh status bar -->
     <div class="dd-refresh" id="autoRefreshBar">
@@ -1378,10 +1390,10 @@
                     <span class="dd-head-right dd-count-pill">{{ nearby_requests|length }}</span>
                 </div>
 
-                {% if not has_profile %}
+                {% if not is_complete_donor %}
                 <div class="dd-empty-sm">
-                    Your donor profile isn't set up yet, so we can't match you with requests.
-                    <br><a class="dd-link" href="{% url 'donor_profile_edit' %}">Complete your profile →</a>
+                    Your donor profile isn't complete yet, so we can't match you with requests.
+                    <br><a class="dd-link" href="{% url 'become_donor' %}">Become a Donor →</a>
                 </div>
                 {% elif nearby_requests %}
                 <div class="dd-nearby-list" id="nearbyRequestsList">
@@ -1693,11 +1705,11 @@
             <span class="dd-head-right dd-count-pill">{{ total_notifications }}</span>
         </div>
 
-        {% if not has_profile %}
+        {% if not is_complete_donor %}
         <div class="no-notifications">
-            <h3>Profile setup required</h3>
-            <p>You don't have a donor profile yet. Add your phone number, blood group and availability so we can match you with nearby requests.</p>
-            <p><a href="{% url 'donor_profile_edit' %}">Complete your profile →</a></p>
+            <h3>Become a donor to get matched</h3>
+            <p>You're signed in, but not registered as a donor yet. We'll reuse your phone and location from registration — just add your blood group.</p>
+            <p><a href="{% url 'become_donor' %}">Become a Donor →</a></p>
         </div>
         {% elif notifications %}
         <div class="blood-requests-grid" id="bloodRequestsGrid">

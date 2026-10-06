@@ -39,6 +39,7 @@ urlpatterns = [
     path('donor/notifications/', views.donor_notification_center, name='donor_notification_center'),
     path('donor/profile/', views.donor_profile, name='donor_profile'),
     path('donor/profile/edit/', views.donor_profile_edit, name='donor_profile_edit'),
+    path('donor/become/', views.become_donor, name='become_donor'),
     path('donor/settings/', views.donor_settings, name='donor_settings'),
     path('donor/history/', views.donor_donation_history, name='donor_donation_history'),
     

@@ -548,9 +548,9 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def perform_create(self, serializer):
         """
-        Create blood request and notify compatible donors.
+        Create blood request and notify matching donors.
         If req_lat/req_lng are set: only notify donors within radius_km (distance-based matching).
-        Donors without lat/lng are excluded when using location. Otherwise: notify all compatible donors.
+        Donors without lat/lng are excluded when using location. Otherwise: notify all exact-group donors.
         """
         blood_request = serializer.save(created_by=self.request.user)
         

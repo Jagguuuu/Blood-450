@@ -99,6 +99,22 @@ class _SplashScreenState extends State<SplashScreen>
     await auth.checkLoginStatus();
     if (!mounted) return;
 
+    // Admins never get autosaved login — closing the app requires signing in again.
+    if (auth.isLoggedIn && auth.isAdmin) {
+      await auth.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const LoginScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+      return;
+    }
+
     if (!auth.isLoggedIn) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -112,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    // Admin / completed donor / incomplete → same rules as Google login.
+    // Regular users: restore session (JWT access ≥1h + refresh) without donor popup.
     await PostAuthNavigator.continueAfterAuth(context);
   }
 

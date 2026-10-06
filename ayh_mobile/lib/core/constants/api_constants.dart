@@ -41,7 +41,10 @@ class ApiConstants {
   static String _normalizeApiBase(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return trimmed;
-    return trimmed.endsWith('/') ? trimmed : '$trimmed/';
+    if (trimmed.endsWith('/')) return trimmed;
+    // Concatenation avoids raw-string / interpolation edge cases in the analyzer.
+    // ignore: prefer_interpolation_to_compose_strings
+    return trimmed + '/';
   }
 
   static String _defaultBaseUrl() {

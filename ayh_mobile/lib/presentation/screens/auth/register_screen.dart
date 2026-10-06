@@ -35,6 +35,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _selectedGender; // M / F / O / null
+  /// null = not answered yet; true = register as donor; false = user only.
+  bool? _wantToBeDonor;
   String? _selectedBloodGroup;
   String? _donatedBefore; // yes / no
   String? _medicalConditions;
@@ -42,7 +44,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _emergencyAvailable = true;
   bool _neverDonated = false;
   DateTime? _lastDonationDate;
-  bool _isAvailable = true;
   bool _consentContact = false;
   bool _consentTerms = false;
   bool _gettingLocation = false;
@@ -104,28 +105,34 @@ class _RegisterScreenState extends State<RegisterScreen>
   Future<void> _goNext() async {
     if (_step == 0) {
       if (!(_accountKey.currentState?.validate() ?? false)) return;
+      if (_wantToBeDonor == null) {
+        _toast('Please choose whether you want to become a blood donor');
+        return;
+      }
     } else if (_step == 1) {
       if (!(_healthKey.currentState?.validate() ?? false)) return;
-      if (_selectedBloodGroup == null) {
-        _toast('Please select your blood group');
-        return;
-      }
-      if (_donatedBefore == null) {
-        _toast('Please answer “Donated blood before?”');
-        return;
-      }
-      if (_donatedBefore == 'no') {
-        setState(() {
-          _neverDonated = true;
-          _lastDonationDate = null;
-        });
-      } else if (_donatedBefore == 'yes' &&
-          !_neverDonated &&
-          _lastDonationDate == null) {
-        _toast(
-          'Pick your last donation date, or check “I have never donated blood”',
-        );
-        return;
+      if (_wantToBeDonor == true) {
+        if (_selectedBloodGroup == null) {
+          _toast('Please select your blood group');
+          return;
+        }
+        if (_donatedBefore == null) {
+          _toast('Please answer “Donated blood before?”');
+          return;
+        }
+        if (_donatedBefore == 'no') {
+          setState(() {
+            _neverDonated = true;
+            _lastDonationDate = null;
+          });
+        } else if (_donatedBefore == 'yes' &&
+            !_neverDonated &&
+            _lastDonationDate == null) {
+          _toast(
+            'Pick your last donation date, or check “I have never donated blood”',
+          );
+          return;
+        }
       }
     }
     HapticFeedback.selectionClick();
@@ -176,8 +183,15 @@ class _RegisterScreenState extends State<RegisterScreen>
       _toast('Please accept contact consent and terms to continue');
       return;
     }
-    if (_selectedBloodGroup == null || _phoneController.text.trim().isEmpty) {
-      _toast('Phone and blood group are required');
+    if (_phoneController.text.trim().isEmpty) {
+      _toast('Phone number is required');
+      setState(() => _step = 1);
+      _pageController.jumpToPage(1);
+      return;
+    }
+    final asDonor = _wantToBeDonor == true;
+    if (asDonor && _selectedBloodGroup == null) {
+      _toast('Blood group is required to register as a donor');
       setState(() => _step = 1);
       _pageController.jumpToPage(1);
       return;
@@ -193,16 +207,17 @@ class _RegisterScreenState extends State<RegisterScreen>
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phone: _phoneController.text.trim(),
-      bloodGroup: _selectedBloodGroup,
+      bloodGroup: asDonor ? _selectedBloodGroup : null,
       gender: _selectedGender,
-      isAvailable: _isAvailable,
+      isAvailable: asDonor ? true : false,
       lastLat: _lat,
       lastLng: _lng,
-      lastDonationDate: _neverDonated ? null : _lastDonationDate,
-      donatedBefore: _yn(_donatedBefore),
+      lastDonationDate:
+          asDonor && !_neverDonated ? _lastDonationDate : null,
+      donatedBefore: asDonor ? _yn(_donatedBefore) : null,
       medicalConditions: _yn(_medicalConditions),
       currentlyHealthy: _yn(_currentlyHealthy),
-      emergencyAvailable: _emergencyAvailable,
+      emergencyAvailable: asDonor ? _emergencyAvailable : false,
       consentContact: _consentContact,
       consentTerms: _consentTerms,
     );
@@ -210,8 +225,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Welcome to Blood450! You\'re ready to receive requests.'),
+        SnackBar(
+          content: Text(
+            asDonor
+                ? 'Welcome to Blood450! You\'re ready to receive requests.'
+                : 'Welcome to Blood450! You can become a donor anytime from home.',
+          ),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -294,7 +313,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
-              'Donor Registration',
+              'Create Account',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -481,6 +500,52 @@ class _RegisterScreenState extends State<RegisterScreen>
                 },
               ),
               const SizedBox(height: 28),
+              _sectionTitle('Become a blood donor?', Icons.volunteer_activism),
+              const SizedBox(height: 8),
+              const Text(
+                'You can always opt in later from Home if you skip for now.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: ChoiceChip(
+                      label: const Text('Yes, I\'ll donate'),
+                      selected: _wantToBeDonor == true,
+                      onSelected: (_) =>
+                          setState(() => _wantToBeDonor = true),
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: _wantToBeDonor == true
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ChoiceChip(
+                      label: const Text('Not now'),
+                      selected: _wantToBeDonor == false,
+                      onSelected: (_) =>
+                          setState(() => _wantToBeDonor = false),
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: _wantToBeDonor == false
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
               GradientButton(
                 label: 'Next: Health →',
                 icon: Icons.arrow_forward_rounded,
@@ -496,6 +561,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _buildHealthStep() {
+    final asDonor = _wantToBeDonor == true;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: _sheet(
@@ -504,7 +570,10 @@ class _RegisterScreenState extends State<RegisterScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _sectionTitle('Health & donation', Icons.bloodtype_outlined),
+              _sectionTitle(
+                asDonor ? 'Health & donation' : 'Contact & health',
+                Icons.bloodtype_outlined,
+              ),
               const SizedBox(height: 12),
               _registerField(
                 controller: _phoneController,
@@ -519,48 +588,50 @@ class _RegisterScreenState extends State<RegisterScreen>
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
-              const Text(
-                'Blood group *',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+              if (asDonor) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'Blood group *',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _bloodGroups.map((bg) {
-                  final selected = _selectedBloodGroup == bg;
-                  return ChoiceChip(
-                    label: Text(bg),
-                    selected: selected,
-                    onSelected: (_) =>
-                        setState(() => _selectedBloodGroup = bg),
-                    selectedColor: AppColors.primary,
-                    labelStyle: TextStyle(
-                      color: selected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              _ynRow(
-                'Donated blood before?',
-                _donatedBefore,
-                (v) => setState(() {
-                  _donatedBefore = v;
-                  if (v == 'no') {
-                    _neverDonated = true;
-                    _lastDonationDate = null;
-                  } else if (v == 'yes') {
-                    _neverDonated = false;
-                  }
-                }),
-              ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _bloodGroups.map((bg) {
+                    final selected = _selectedBloodGroup == bg;
+                    return ChoiceChip(
+                      label: Text(bg),
+                      selected: selected,
+                      onSelected: (_) =>
+                          setState(() => _selectedBloodGroup = bg),
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: selected ? Colors.white : AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                _ynRow(
+                  'Donated blood before?',
+                  _donatedBefore,
+                  (v) => setState(() {
+                    _donatedBefore = v;
+                    if (v == 'no') {
+                      _neverDonated = true;
+                      _lastDonationDate = null;
+                    } else if (v == 'yes') {
+                      _neverDonated = false;
+                    }
+                  }),
+                ),
+              ],
               const SizedBox(height: 12),
               _ynRow(
                 'Medical conditions?',
@@ -573,57 +644,64 @@ class _RegisterScreenState extends State<RegisterScreen>
                 _currentlyHealthy,
                 (v) => setState(() => _currentlyHealthy = v),
               ),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Available for emergency donation'),
-                value: _emergencyAvailable,
-                activeThumbColor: AppColors.primary,
-                onChanged: (v) => setState(() => _emergencyAvailable = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Show me as available for requests'),
-                value: _isAvailable,
-                activeThumbColor: AppColors.primary,
-                onChanged: (v) => setState(() => _isAvailable = v),
-              ),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('I have never donated blood'),
-                value: _neverDonated,
-                controlAffinity: ListTileControlAffinity.leading,
-                onChanged: (v) {
-                  setState(() {
-                    _neverDonated = v ?? false;
-                    if (_neverDonated) _lastDonationDate = null;
-                  });
-                },
-              ),
-              if (!_neverDonated)
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final now = DateTime.now();
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _lastDonationDate ?? now,
-                      firstDate: DateTime(now.year - 40),
-                      lastDate: now,
-                      helpText: 'Last blood donation date',
-                    );
-                    if (picked != null && mounted) {
-                      setState(() => _lastDonationDate = picked);
-                    }
-                  },
-                  icon: const Icon(Icons.calendar_today, size: 18),
-                  label: Text(
-                    _lastDonationDate == null
-                        ? 'Pick last donation date (optional)'
-                        : '${_lastDonationDate!.day.toString().padLeft(2, '0')}/'
-                            '${_lastDonationDate!.month.toString().padLeft(2, '0')}/'
-                            '${_lastDonationDate!.year}',
+              if (asDonor) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Available for emergency donation'),
+                  value: _emergencyAvailable,
+                  activeThumbColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _emergencyAvailable = v),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'You will be marked available for blood requests after signup. '
+                    'You can switch to Busy anytime from Home.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
                   ),
                 ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('I have never donated blood'),
+                  value: _neverDonated,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  onChanged: (v) {
+                    setState(() {
+                      _neverDonated = v ?? false;
+                      if (_neverDonated) _lastDonationDate = null;
+                    });
+                  },
+                ),
+                if (!_neverDonated)
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _lastDonationDate ?? now,
+                        firstDate: DateTime(now.year - 40),
+                        lastDate: now,
+                        helpText: 'Last blood donation date',
+                      );
+                      if (picked != null && mounted) {
+                        setState(() => _lastDonationDate = picked);
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today, size: 18),
+                    label: Text(
+                      _lastDonationDate == null
+                          ? 'Pick last donation date (optional)'
+                          : '${_lastDonationDate!.day.toString().padLeft(2, '0')}/'
+                              '${_lastDonationDate!.month.toString().padLeft(2, '0')}/'
+                              '${_lastDonationDate!.year}',
+                    ),
+                  ),
+              ],
               const SizedBox(height: 28),
               GradientButton(
                 label: 'Next: Location →',

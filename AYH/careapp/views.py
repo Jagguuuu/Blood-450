@@ -41,30 +41,30 @@ DEFAULT_RADIUS_KM = getattr(django_settings, 'DEFAULT_RADIUS_KM', 10)
 
 
 
-# Blood compatibility matrix - who can donate to whom
+# Exact blood-group matching only (request AB+ → notify AB+ donors only).
+# Cross-type transfusion compatibility is intentionally not used for alerts.
 BLOOD_COMPATIBILITY = {
-    'A+': ['A+', 'A-', 'O+', 'O-'],
-    'A-': ['A-', 'O-'],
-    'B+': ['B+', 'B-', 'O+', 'O-'],
-    'B-': ['B-', 'O-'],
-    'AB+': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],  # Universal receiver
-    'AB-': ['A-', 'B-', 'AB-', 'O-'],
-    'O+': ['O+', 'O-'],
-    'O-': ['O-'],  # Universal donor
+    'A+': ['A+'],
+    'A-': ['A-'],
+    'B+': ['B+'],
+    'B-': ['B-'],
+    'AB+': ['AB+'],
+    'AB-': ['AB-'],
+    'O+': ['O+'],
+    'O-': ['O-'],
 }
 
 
 def get_compatible_blood_groups(requested_blood_group):
     """
-    Returns list of blood groups that can donate to the requested blood group.
-    
-    Args:
-        requested_blood_group: The blood group needed (e.g., 'A+')
-    
-    Returns:
-        List of compatible donor blood groups
+    Returns donor blood groups to notify for a request.
+
+    Matching is exact-group only (e.g. AB+ request → AB+ donors only).
     """
-    return BLOOD_COMPATIBILITY.get(requested_blood_group, [requested_blood_group])
+    group = (requested_blood_group or '').strip()
+    if not group:
+        return []
+    return BLOOD_COMPATIBILITY.get(group, [group])
 
 
 def is_staff_user(user):
@@ -1154,6 +1154,9 @@ def donor_notifications(request):
         'recent_activity': recent_activity,
         'user': request.user,
         'has_profile': has_profile,
+        'is_complete_donor': bool(
+            donor_profile and (donor_profile.blood_group or '').strip()
+        ),
         'donor_profile': donor_profile,
         'user_profile': user_profile,
         'total_notifications': total_notifications,
@@ -1292,6 +1295,61 @@ def donor_profile_edit(request):
         'form': form,
         'donor_profile': donor_profile,
         'user_profile': user_profile,
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def become_donor(request):
+    """Opt-in later: set blood group using phone/location already collected at registration."""
+    if request.user.is_staff:
+        return redirect('admin_dashboard')
+
+    donor_profile, _ = DonorProfile.objects.get_or_create(user=request.user)
+    if (donor_profile.blood_group or '').strip():
+        messages.info(request, 'You are already registered as a blood donor.')
+        return redirect('donor_notifications')
+
+    blood_choices = [('', '-- Select blood group --')] + list(DonorProfile.BLOOD_GROUP_CHOICES)
+    error = ''
+
+    if request.method == 'POST':
+        blood_group = (request.POST.get('blood_group') or '').strip()
+        is_available = request.POST.get('is_available') == 'on'
+        never_donated = request.POST.get('never_donated') == 'on'
+        last_donation_raw = (request.POST.get('last_donation_date') or '').strip()
+
+        if blood_group not in dict(DonorProfile.BLOOD_GROUP_CHOICES):
+            error = 'Please select a valid blood group.'
+        elif not (donor_profile.phone or '').strip():
+            error = 'No phone number on file from registration. Please update your profile first.'
+        else:
+            donor_profile.blood_group = blood_group
+            donor_profile.is_available = is_available
+            donor_profile.availability_status = 'Available' if is_available else 'Busy'
+            if never_donated:
+                donor_profile.last_donation_date = None
+            elif last_donation_raw:
+                try:
+                    from datetime import datetime as _dt
+                    donor_profile.last_donation_date = _dt.strptime(
+                        last_donation_raw, '%Y-%m-%d'
+                    ).date()
+                except ValueError:
+                    error = 'Invalid last donation date.'
+            if not error:
+                donor_profile.save()
+                messages.success(
+                    request,
+                    'Thank you! You are now registered as a blood donor.',
+                )
+                return redirect('donor_notifications')
+
+    return render(request, 'become_donor.html', {
+        'donor_profile': donor_profile,
+        'blood_choices': blood_choices,
+        'error': error,
+        'phone_on_file': (donor_profile.phone or '').strip(),
     })
 
 
@@ -1690,6 +1748,11 @@ class DonorLoginView(LoginView):
                     or url_path.startswith("/home/")
                 ):
                     url = None
+
+        # Admins: no long-lived autosaved session — expire when the browser closes.
+        # Regular users keep SESSION_COOKIE_AGE (persistent login).
+        if getattr(self.request.user, "is_authenticated", False) and self.request.user.is_staff:
+            self.request.session.set_expiry(0)
 
         if not url:
             if getattr(self.request.user, "is_authenticated", False) and self.request.user.is_staff:
@@ -2318,6 +2381,21 @@ def donor_register(request):
     #     'message': 'OTP sent to your registered mobile number. Enter it below to verify.',
     # })
     DonorProfile.objects.filter(user=user).update(phone_verified=True)
+    become_donor = (data.get('become_donor') or 'yes').strip().lower() == 'yes'
+    request.session['pending_become_donor'] = become_donor
+    if not become_donor:
+        # User opted out of donor role — phone/location saved; skip blood-group step.
+        request.session.pop('pending_verification_user_id', None)
+        request.session.pop('pending_verification_phone', None)
+        request.session.pop('pending_become_donor', None)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        return JsonResponse({
+            'success': True,
+            'step': 'user_home',
+            'role': 'user',
+            'redirect': reverse('donor_notifications'),
+            'message': 'Registration successful. You can become a donor anytime from your dashboard.',
+        })
     return JsonResponse({
         'success': True,
         'step': 'blood_group',
@@ -2410,7 +2488,9 @@ def donor_register_select_blood_group(request):
     user = get_object_or_404(User, pk=user_id)
     profile = get_object_or_404(DonorProfile, user=user)
     profile.blood_group = blood_group
-    profile.save(update_fields=['blood_group'])
+    profile.is_available = True
+    profile.availability_status = 'Available'
+    profile.save(update_fields=['blood_group', 'is_available', 'availability_status'])
     request.session.pop('pending_verification_user_id', None)
     pending_phone = request.session.pop('pending_verification_phone', None) or profile.phone
     if pending_phone:

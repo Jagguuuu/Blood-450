@@ -763,6 +763,12 @@
             <span class="nav-badge" id="sidebarNotifBadge" data-count="{{ donor_notification_count|default:0 }}">{% if donor_notification_count %}{{ donor_notification_count }}{% endif %}</span>
           </a>
           <div class="sidebar-nav-sep" aria-hidden="true"></div>
+          {% if not is_complete_donor %}
+          <a href="{% url 'become_donor' %}" data-nav="become">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c0 0 6 7 6 12a6 6 0 1 1-12 0c0-5 6-12 6-12z"/></svg>
+            Become a Donor
+          </a>
+          {% endif %}
           <a href="{% url 'donor_profile' %}" data-nav="profile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
             Profile
@@ -794,7 +800,11 @@
             </div>
             <p>Every Drop Saves Lives</p>
             <small>Be the reason someone gets a second chance.</small>
+            {% if is_complete_donor %}
             <a class="btn-donate-now" href="{% url 'donor_notifications' %}#blood-requests">Donate Now →</a>
+            {% else %}
+            <a class="btn-donate-now" href="{% url 'become_donor' %}">Become a Donor →</a>
+            {% endif %}
           </div>
           {% endif %}
         </div>

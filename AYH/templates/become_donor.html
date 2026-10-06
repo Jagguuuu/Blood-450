@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Become a Donor - Blood 450{% endblock %}
+{% block page_heading %}Become a Blood Donor{% endblock %}
+{% block page_subheading %}Your phone and location from registration will be reused{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .bd-wrap { max-width: 560px; margin: 0 auto; }
+  .bd-card {
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 14px;
+    padding: 22px; box-shadow: 0 8px 24px rgba(16,42,86,.06);
+  }
+  .bd-quote {
+    margin: 0 0 14px; padding: 14px 16px; border-radius: 12px;
+    background: #FFF5F5; border: 1px solid #FECACA; color: #7F1D1D;
+    font-style: italic; font-size: 0.92rem; line-height: 1.45;
+  }
+  .bd-note { margin: 0 0 18px; color: #64748B; font-size: 0.84rem; line-height: 1.4; }
+  .bd-phone {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    padding: 10px 12px; border-radius: 10px; background: #FFF1F2; color: #991B1B;
+    font-size: 0.85rem; font-weight: 700;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-weight: 700; color: #102A56; margin-bottom: 5px;
+  }
+  .form-group select, .form-group input[type="date"] {
+    width: 100%; height: 42px; padding: 0 12px; border: 1px solid #E2E8F0;
+    border-radius: 10px; background: #FAFBFC; color: #102A56; font: inherit; font-size: 0.88rem;
+  }
+  .check-row {
+    display: flex; align-items: center; gap: 8px; margin: 8px 0 14px;
+    font-size: 0.85rem; color: #334155; font-weight: 600;
+  }
+  .alert-error {
+    margin-bottom: 12px; padding: 10px 12px; border-radius: 10px;
+    background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; font-size: 0.82rem;
+  }
+  .form-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;
+    padding-top: 14px; border-top: 1px solid #F1F5F9;
+  }
+  .btn {
+    height: 42px; padding: 0 16px; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;
+  }
+  .btn-cancel { background: #fff; border: 1px solid #E2E8F0; color: #334155; }
+  .btn-save { background: linear-gradient(180deg,#E53935,#C62828); border: 0; color: #fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bd-wrap">
+  <div class="bd-card">
+    <p class="bd-quote">
+      “A single pint can save three lives — and the person you help might one day help someone you love.”
+    </p>
+    <p class="bd-note">
+      We already have your registration details. Confirm your blood group to start receiving nearby requests.
+    </p>
+
+    {% if phone_on_file %}
+    <div class="bd-phone">📞 Phone on file: {{ phone_on_file }}</div>
+    {% endif %}
+
+    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_blood_group">Blood Group *</label>
+        <select id="id_blood_group" name="blood_group" required>
+          {% for value, label in blood_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <label class="check-row">
+        <input type="checkbox" name="never_donated" id="id_never_donated">
+        I have never donated blood
+      </label>
+
+      <div class="form-group" id="lastDonationWrap">
+        <label for="id_last_donation_date">Last blood donation date (optional)</label>
+        <input type="date" id="id_last_donation_date" name="last_donation_date">
+      </div>
+
+      <label class="check-row">
+        <input type="checkbox" name="is_available" id="id_is_available" checked>
+        Available to donate / receive requests
+      </label>
+
+      <div class="form-actions">
+        <a class="btn btn-cancel" href="{% url 'donor_notifications' %}">Not now</a>
+        <button type="submit" class="btn btn-save">Become a Donor</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var never = document.getElementById('id_never_donated');
+  var wrap = document.getElementById('lastDonationWrap');
+  var dateInput = document.getElementById('id_last_donation_date');
+  function sync() {
+    if (!never || !wrap) return;
+    wrap.style.display = never.checked ? 'none' : 'block';
+    if (never.checked && dateInput) dateInput.value = '';
+  }
+  if (never) never.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}
