@@ -247,7 +247,6 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5F5),
       resizeToAvoidBottomInset: true,
@@ -255,40 +254,14 @@ class _RegisterScreenState extends State<RegisterScreen>
         builder: (context, authProvider, _) {
           return FadeTransition(
             opacity: _fadeIn,
-            child: Stack(
-              children: [
-                _buildBackgroundBlobs(),
-                SafeArea(
-                  child: Column(
-                    children: [
-                      _buildTopBar(),
-                      _buildStepper(),
-                      Expanded(
-                        child: IndexedStack(
-                          index: _step,
-                          sizing: StackFit.expand,
-                          children: [
-                            _buildAccountStep(),
-                            _buildHealthStep(),
-                            _buildLocationStep(),
-                            _buildReviewStep(),
-                          ],
-                        ),
-                      ),
-                      // Always-visible Next / Create button (not inside clipped scroll).
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          8,
-                          16,
-                          12 + (bottomInset > 0 ? 0 : 4),
-                        ),
-                        child: _buildStickyActions(authProvider),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildTopBar(),
+                  _buildStepper(),
+                  Expanded(child: _buildCurrentStep(authProvider)),
+                ],
+              ),
             ),
           );
         },
@@ -296,73 +269,35 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget _buildStickyActions(AuthProvider authProvider) {
+  Widget _buildCurrentStep(AuthProvider authProvider) {
     switch (_step) {
       case 0:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            GradientButton(
-              label: 'Next: Health →',
-              icon: Icons.arrow_forward_rounded,
-              onPressed: _goNext,
-            ),
-            const SizedBox(height: 4),
-            _loginLink(),
-          ],
-        );
+        return _buildAccountStep();
       case 1:
-        return GradientButton(
-          label: 'Next: Location →',
-          icon: Icons.arrow_forward_rounded,
-          onPressed: _goNext,
-        );
+        return _buildHealthStep();
       case 2:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            GradientButton(
-              label: 'Next: Review →',
-              icon: Icons.arrow_forward_rounded,
-              onPressed: _goNext,
-            ),
-            TextButton(
-              onPressed: _goNext,
-              child: const Text('Skip location for now'),
-            ),
-          ],
-        );
+        return _buildLocationStep();
       default:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            GradientButton(
-              label: 'Create My Account',
-              icon: Icons.volunteer_activism_rounded,
-              isLoading: authProvider.isLoading,
-              onPressed: authProvider.isLoading ? null : _handleRegister,
-            ),
-            TextButton(
-              onPressed: authProvider.isLoading ? null : _goBack,
-              child: const Text('← Back'),
-            ),
-          ],
-        );
+        return _buildReviewStep(authProvider.isLoading);
     }
   }
 
-  Widget _stepScroll({required Widget child}) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
+  /// Full-height ListView so the form scrolls all the way to the bottom on iOS.
+  Widget _scrollForm({
+    GlobalKey<FormState>? formKey,
+    required List<Widget> children,
+  }) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final list = ListView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: child,
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 40 + bottomInset),
+      children: children,
     );
+    if (formKey == null) return list;
+    return Form(key: formKey, child: list);
   }
 
   Widget _buildTopBar() {
@@ -462,10 +397,10 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _buildAccountStep() {
-    return _stepScroll(
-      child: _sheet(
-        child: Form(
-          key: _accountKey,
+    return _scrollForm(
+      formKey: _accountKey,
+      children: [
+        _sheet(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -627,16 +562,25 @@ class _RegisterScreenState extends State<RegisterScreen>
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 20),
+        GradientButton(
+          label: 'Next: Health →',
+          icon: Icons.arrow_forward_rounded,
+          onPressed: _goNext,
+        ),
+        const SizedBox(height: 8),
+        _loginLink(),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
   Widget _buildHealthStep() {
     final asDonor = _wantToBeDonor == true;
-    return _stepScroll(
-      child: _sheet(
-        child: Form(
-          key: _healthKey,
+    return _scrollForm(
+      formKey: _healthKey,
+      children: [
+        _sheet(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -775,114 +719,151 @@ class _RegisterScreenState extends State<RegisterScreen>
             ],
           ),
         ),
-      ),
+        const SizedBox(height: 20),
+        GradientButton(
+          label: 'Next: Location →',
+          icon: Icons.arrow_forward_rounded,
+          onPressed: _goNext,
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
   Widget _buildLocationStep() {
-    return _stepScroll(
-      child: _sheet(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _sectionTitle('Location', Icons.location_on_outlined),
-            const SizedBox(height: 8),
-            const Text(
-              'Set your location so we can match you with nearby blood requests. You can skip and add it later.',
-              style: TextStyle(color: AppColors.textSecondary, height: 1.4),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.2),
+    return _scrollForm(
+      children: [
+        _sheet(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _sectionTitle('Location', Icons.location_on_outlined),
+              const SizedBox(height: 8),
+              const Text(
+                'Set your location so we can match you with nearby blood requests. You can skip and add it later.',
+                style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Text(
+                  _lat != null
+                      ? (_locationLabel.isNotEmpty
+                          ? _locationLabel
+                          : 'Coordinates captured')
+                      : 'No location set yet',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              child: Text(
-                _lat != null
-                    ? (_locationLabel.isNotEmpty
-                        ? _locationLabel
-                        : 'Coordinates captured')
-                    : 'No location set yet',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _gettingLocation ? null : _useCurrentLocation,
+                icon: _gettingLocation
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+                label: Text(
+                  _gettingLocation ? 'Detecting…' : 'Use current location',
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _gettingLocation ? null : _useCurrentLocation,
-              icon: _gettingLocation
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.my_location),
-              label: Text(
-                _gettingLocation ? 'Detecting…' : 'Use current location',
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 20),
+        GradientButton(
+          label: 'Next: Review →',
+          icon: Icons.arrow_forward_rounded,
+          onPressed: _goNext,
+        ),
+        TextButton(
+          onPressed: _goNext,
+          child: const Text('Skip location for now'),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
-  Widget _buildReviewStep() {
+  Widget _buildReviewStep(bool loading) {
     String ynLabel(String? v) {
       if (v == 'yes') return 'Yes';
       if (v == 'no') return 'No';
       return '—';
     }
 
-    return _stepScroll(
-      child: _sheet(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _sectionTitle('Review & confirm', Icons.checklist_rounded),
-            const SizedBox(height: 12),
-            _reviewRow('Username', _usernameController.text.trim()),
-            _reviewRow('Email', _emailController.text.trim()),
-            _reviewRow(
-              'Name',
-              '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
-                  .trim(),
-            ),
-            _reviewRow('Phone', _phoneController.text.trim()),
-            _reviewRow('Blood group', _selectedBloodGroup ?? '—'),
-            _reviewRow('Donated before', ynLabel(_donatedBefore)),
-            _reviewRow('Emergency ready', _emergencyAvailable ? 'Yes' : 'No'),
-            _reviewRow(
-              'Location',
-              _lat != null ? (_locationLabel.isEmpty ? 'Set' : _locationLabel) : 'Not set',
-            ),
-            const SizedBox(height: 12),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _consentContact,
-              onChanged: (v) => setState(() => _consentContact = v ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
-                'I agree to be contacted for blood donation requests',
-                style: TextStyle(fontSize: 13),
+    return _scrollForm(
+      children: [
+        _sheet(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _sectionTitle('Review & confirm', Icons.checklist_rounded),
+              const SizedBox(height: 12),
+              _reviewRow('Username', _usernameController.text.trim()),
+              _reviewRow('Email', _emailController.text.trim()),
+              _reviewRow(
+                'Name',
+                '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+                    .trim(),
               ),
-            ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _consentTerms,
-              onChanged: (v) => setState(() => _consentTerms = v ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
-                'I accept Terms & Privacy Policy',
-                style: TextStyle(fontSize: 13),
+              _reviewRow('Phone', _phoneController.text.trim()),
+              _reviewRow('Blood group', _selectedBloodGroup ?? '—'),
+              _reviewRow('Donated before', ynLabel(_donatedBefore)),
+              _reviewRow('Emergency ready', _emergencyAvailable ? 'Yes' : 'No'),
+              _reviewRow(
+                'Location',
+                _lat != null
+                    ? (_locationLabel.isEmpty ? 'Set' : _locationLabel)
+                    : 'Not set',
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _consentContact,
+                onChanged: (v) =>
+                    setState(() => _consentContact = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'I agree to be contacted for blood donation requests',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _consentTerms,
+                onChanged: (v) => setState(() => _consentTerms = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'I accept Terms & Privacy Policy',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 20),
+        GradientButton(
+          label: 'Create My Account',
+          icon: Icons.volunteer_activism_rounded,
+          isLoading: loading,
+          onPressed: loading ? null : _handleRegister,
+        ),
+        TextButton(
+          onPressed: loading ? null : _goBack,
+          child: const Text('← Back'),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
@@ -950,41 +931,6 @@ class _RegisterScreenState extends State<RegisterScreen>
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildBackgroundBlobs() {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 120,
-              right: -30,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 200,
-              left: -50,
-              child: Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.lightRed.withValues(alpha: 0.4),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
