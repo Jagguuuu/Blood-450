@@ -20,7 +20,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
-  final _pageController = PageController();
   final _accountKey = GlobalKey<FormState>();
   final _healthKey = GlobalKey<FormState>();
 
@@ -79,7 +78,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void dispose() {
     _fadeController.dispose();
-    _pageController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -137,11 +135,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
     HapticFeedback.selectionClick();
     setState(() => _step += 1);
-    await _pageController.animateToPage(
-      _step,
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   Future<void> _goBack() async {
@@ -151,11 +144,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
     HapticFeedback.selectionClick();
     setState(() => _step -= 1);
-    await _pageController.animateToPage(
-      _step,
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   Future<void> _useCurrentLocation() async {
@@ -186,14 +174,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (_phoneController.text.trim().isEmpty) {
       _toast('Phone number is required');
       setState(() => _step = 1);
-      _pageController.jumpToPage(1);
       return;
     }
     final asDonor = _wantToBeDonor == true;
     if (asDonor && _selectedBloodGroup == null) {
       _toast('Blood group is required to register as a donor');
       setState(() => _step = 1);
-      _pageController.jumpToPage(1);
       return;
     }
 
@@ -264,6 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5F5),
+      resizeToAvoidBottomInset: true,
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           return FadeTransition(
@@ -277,9 +264,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                       _buildTopBar(),
                       _buildStepper(),
                       Expanded(
-                        child: PageView(
-                          controller: _pageController,
-                          physics: const NeverScrollableScrollPhysics(),
+                        // IndexedStack avoids PageView stealing vertical scroll on iOS.
+                        child: IndexedStack(
+                          index: _step,
+                          sizing: StackFit.expand,
                           children: [
                             _buildAccountStep(),
                             _buildHealthStep(),
@@ -296,6 +284,25 @@ class _RegisterScreenState extends State<RegisterScreen>
           );
         },
       ),
+    );
+  }
+
+  Widget _stepScroll({required Widget child}) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + bottomInset),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -382,8 +389,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _buildAccountStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return _stepScroll(
       child: _sheet(
         child: Form(
           key: _accountKey,
@@ -562,8 +568,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildHealthStep() {
     final asDonor = _wantToBeDonor == true;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return _stepScroll(
       child: _sheet(
         child: Form(
           key: _healthKey,
@@ -716,8 +721,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _buildLocationStep() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return _stepScroll(
       child: _sheet(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -784,8 +788,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       return '—';
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    return _stepScroll(
       child: _sheet(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
