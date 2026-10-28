@@ -248,6 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Scaffold(
       backgroundColor: const Color(0xFFFFF5F5),
       resizeToAvoidBottomInset: true,
@@ -264,7 +265,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                       _buildTopBar(),
                       _buildStepper(),
                       Expanded(
-                        // IndexedStack avoids PageView stealing vertical scroll on iOS.
                         child: IndexedStack(
                           index: _step,
                           sizing: StackFit.expand,
@@ -272,9 +272,19 @@ class _RegisterScreenState extends State<RegisterScreen>
                             _buildAccountStep(),
                             _buildHealthStep(),
                             _buildLocationStep(),
-                            _buildReviewStep(authProvider.isLoading),
+                            _buildReviewStep(),
                           ],
                         ),
+                      ),
+                      // Always-visible Next / Create button (not inside clipped scroll).
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          8,
+                          16,
+                          12 + (bottomInset > 0 ? 0 : 4),
+                        ),
+                        child: _buildStickyActions(authProvider),
                       ),
                     ],
                   ),
@@ -287,22 +297,72 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget _stepScroll({required Widget child}) {
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + bottomInset),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: constraints.maxWidth),
-            child: child,
-          ),
+  Widget _buildStickyActions(AuthProvider authProvider) {
+    switch (_step) {
+      case 0:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GradientButton(
+              label: 'Next: Health →',
+              icon: Icons.arrow_forward_rounded,
+              onPressed: _goNext,
+            ),
+            const SizedBox(height: 4),
+            _loginLink(),
+          ],
         );
-      },
+      case 1:
+        return GradientButton(
+          label: 'Next: Location →',
+          icon: Icons.arrow_forward_rounded,
+          onPressed: _goNext,
+        );
+      case 2:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GradientButton(
+              label: 'Next: Review →',
+              icon: Icons.arrow_forward_rounded,
+              onPressed: _goNext,
+            ),
+            TextButton(
+              onPressed: _goNext,
+              child: const Text('Skip location for now'),
+            ),
+          ],
+        );
+      default:
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GradientButton(
+              label: 'Create My Account',
+              icon: Icons.volunteer_activism_rounded,
+              isLoading: authProvider.isLoading,
+              onPressed: authProvider.isLoading ? null : _handleRegister,
+            ),
+            TextButton(
+              onPressed: authProvider.isLoading ? null : _goBack,
+              child: const Text('← Back'),
+            ),
+          ],
+        );
+    }
+  }
+
+  Widget _stepScroll({required Widget child}) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: child,
     );
   }
 
@@ -382,8 +442,22 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Widget _sheet({required Widget child}) {
-    return WhiteWaveSheet(
-      padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+    // Plain card — ClipPath wave sheet was clipping the bottom (Next button)
+    // and blocking scroll hit-testing on iOS.
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: child,
     );
   }
@@ -551,14 +625,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-              GradientButton(
-                label: 'Next: Health →',
-                icon: Icons.arrow_forward_rounded,
-                onPressed: _goNext,
-              ),
-              const SizedBox(height: 12),
-              _loginLink(),
             ],
           ),
         ),
@@ -707,12 +773,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                     ),
                   ),
               ],
-              const SizedBox(height: 28),
-              GradientButton(
-                label: 'Next: Location →',
-                icon: Icons.arrow_forward_rounded,
-                onPressed: _goNext,
-              ),
             ],
           ),
         ),
@@ -765,23 +825,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                 _gettingLocation ? 'Detecting…' : 'Use current location',
               ),
             ),
-            const SizedBox(height: 28),
-            GradientButton(
-              label: 'Next: Review →',
-              icon: Icons.arrow_forward_rounded,
-              onPressed: _goNext,
-            ),
-            TextButton(
-              onPressed: _goNext,
-              child: const Text('Skip for now'),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildReviewStep(bool loading) {
+  Widget _buildReviewStep() {
     String ynLabel(String? v) {
       if (v == 'yes') return 'Yes';
       if (v == 'no') return 'No';
@@ -830,18 +880,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                 'I accept Terms & Privacy Policy',
                 style: TextStyle(fontSize: 13),
               ),
-            ),
-            const SizedBox(height: 20),
-            GradientButton(
-              label: 'Create My Account',
-              icon: Icons.volunteer_activism_rounded,
-              isLoading: loading,
-              onPressed: loading ? null : _handleRegister,
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: loading ? null : _goBack,
-              child: const Text('← Back'),
             ),
           ],
         ),
