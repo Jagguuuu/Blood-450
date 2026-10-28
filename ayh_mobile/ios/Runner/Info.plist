@@ -47,5 +47,34 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Blood450 uses your location to match you with nearby blood requests.</string>
+	<!-- Google Sign-In: iOS OAuth client URL scheme (REVERSED_CLIENT_ID) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.477230798600-a4o5vdb6a17vssncr1jlljvbi8hnvt0e</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>477230798600-a4o5vdb6a17vssncr1jlljvbi8hnvt0e.apps.googleusercontent.com</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>65.2.20.185</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

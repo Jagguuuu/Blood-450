@@ -1,0 +1,113 @@
+# Blood-450 — Flutter app lives in ayh_mobile/ (monorepo)
+# After push: Codemagic → select branch → "Check for configuration file"
+#
+# Workflows:
+#   blood450-android  → release APK (works without Apple / Play signing)
+#   blood450-ios      → signed IPA  (needs App Store Connect API key in Codemagic)
+#   blood450-ios-compile → iOS compile check without code signing
+
+workflows:
+  blood450-android:
+    name: Blood450 Android APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    working_directory: ayh_mobile
+    environment:
+      flutter: stable
+      java: 17
+      vars:
+        API_BASE_URL: "http://65.2.20.185/api/"
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/ayh_mobile/android/local.properties"
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Build release APK
+        script: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
+    artifacts:
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+
+  blood450-ios-compile:
+    name: Blood450 iOS Compile (no signing)
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    working_directory: ayh_mobile
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        API_BASE_URL: "http://65.2.20.185/api/"
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install CocoaPods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Build iOS (no codesign)
+        script: |
+          flutter build ios --release --no-codesign \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
+    artifacts:
+      - build/ios/**/*.app
+      - /tmp/xcodebuild_logs/*.log
+
+  blood450-ios:
+    name: Blood450 iOS IPA
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    working_directory: ayh_mobile
+    # Must match the App Store Connect API key name in
+    # Codemagic → Team settings → Team integrations → Developer Portal
+    integrations:
+      app_store_connect: Blood450
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.example.ayhMobile
+      vars:
+        BUNDLE_ID: "com.example.ayhMobile"
+        # App Store Connect → your app → App Information → Apple ID (numeric)
+        # Leave empty until the app record exists; build number falls back to CM_BUILD_ID
+        APP_STORE_APPLE_ID: ""
+        API_BASE_URL: "http://65.2.20.185/api/"
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install CocoaPods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+      - name: Flutter build ipa
+        script: |
+          set -e
+          BUILD_NUMBER="$CM_BUILD_ID"
+          if [ -n "$APP_STORE_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" || true)
+            if [ -n "$LATEST" ] && [ "$LATEST" != "None" ]; then
+              BUILD_NUMBER=$((LATEST + 1))
+            fi
+          fi
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define=API_BASE_URL="$API_BASE_URL" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Turn these on after the first manual App Store Connect upload.
+        submit_to_testflight: false
+        submit_to_app_store: false
