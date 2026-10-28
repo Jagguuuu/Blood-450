@@ -74,9 +74,8 @@ workflows:
         bundle_identifier: com.example.ayhMobile
       vars:
         BUNDLE_ID: "com.example.ayhMobile"
-        # App Store Connect → your app → App Information → Apple ID (numeric)
-        # Leave empty until the app record exists; build number falls back to CM_BUILD_ID
-        APP_STORE_APPLE_ID: ""
+        # When you create the app in App Store Connect, add here (numeric Apple ID):
+        # APP_STORE_APPLE_ID: 1234567890
         API_BASE_URL: "http://65.2.20.185/api/"
     scripts:
       - name: Set up code signing settings on Xcode project
@@ -89,13 +88,7 @@ workflows:
       - name: Flutter build ipa
         script: |
           set -e
-          BUILD_NUMBER="$CM_BUILD_ID"
-          if [ -n "$APP_STORE_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" || true)
-            if [ -n "$LATEST" ] && [ "$LATEST" != "None" ]; then
-              BUILD_NUMBER=$((LATEST + 1))
-            fi
-          fi
+          BUILD_NUMBER="${CM_BUILD_ID:-1}"
           flutter build ipa --release \
             --build-name=1.0.0 \
             --build-number="$BUILD_NUMBER" \
